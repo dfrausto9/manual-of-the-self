@@ -1,0 +1,326 @@
+<title>Manual of the Self</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Figtree:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+Symbols:wght@500&family=Noto+Sans+Symbols+2&display=swap">
+<style>
+/* Layout: an observatory almanac. Instrument (the wheel) beside its reading, then the forecast calendar, then the manual. */
+:root {
+  --bg: #eceef4; --surface: #f8f9fc; --sunken: #e2e5ee; --ink: #1b1e32; --muted: #5b6080; --line: #d3d7e3;
+  --accent: #85561a; --accent-soft: #f1e6d2;
+  --flow: #23786e; --flow-soft: #d8ece8; --friction: #ad3f39; --friction-soft: #f3dcd9; --blend: #5e4ba1; --blend-soft: #e3def3;
+  --display: "Marcellus", "Trajan Pro", Georgia, serif;
+  --body: "Figtree", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
+  --glyph: "Noto Sans Symbols 2", "Noto Sans Symbols", "Segoe UI Symbol", "Apple Symbols", sans-serif;
+  --radius: 10px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #0f111b; --surface: #161927; --sunken: #1d2133; --ink: #e7e5f0; --muted: #9a9db6; --line: #2a2e45;
+  --accent: #d9b26b; --accent-soft: #3a3020;
+  --flow: #5cc2b3; --flow-soft: #17302d; --friction: #e47c71; --friction-soft: #3a1f1d; --blend: #a896e3; --blend-soft: #29233f;
+  color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --bg: #0f111b; --surface: #161927; --sunken: #1d2133; --ink: #e7e5f0; --muted: #9a9db6; --line: #2a2e45;
+  --accent: #d9b26b; --accent-soft: #3a3020;
+  --flow: #5cc2b3; --flow-soft: #17302d; --friction: #e47c71; --friction-soft: #3a1f1d; --blend: #a896e3; --blend-soft: #29233f;
+  color-scheme: dark; }
+
+* { box-sizing: border-box; }
+[hidden] { display: none !important; }
+body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.55; }
+.wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; display: grid; gap: 40px; }
+.wrap > *, section, .instrument > *, header.top > * { min-width: 0; }
+h1, h2, h3 { font-family: var(--display); font-weight: 400; text-wrap: balance; margin: 0; letter-spacing: .01em; }
+h1 { font-size: clamp(34px, 6vw, 56px); line-height: 1.02; }
+h2 { font-size: 28px; }
+h3 { font-size: 20px; }
+p { margin: 0; }
+.eyebrow { font-family: var(--mono); font-size: 11.5px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); }
+.lede { color: var(--muted); max-width: 62ch; font-size: 16px; }
+.glyph { font-family: var(--glyph); font-variant-emoji: text; }
+.mono { font-family: var(--mono); font-variant-numeric: tabular-nums; }
+button, input, select { font: inherit; color: inherit; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* header */
+header.top { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 28px; align-items: end; }
+header.top .motto { font-family: var(--display); font-size: 19px; color: var(--accent); }
+@media (max-width: 820px) { header.top { grid-template-columns: 1fr; } }
+
+/* form */
+form.birth { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 18px; display: grid; gap: 12px; }
+.fields { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 10px; }
+label.f { display: grid; gap: 4px; font-size: 12.5px; color: var(--muted); min-width: 0; }
+label.f input, label.f select { width: 100%; min-width: 0; background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px; font-size: 14.5px; }
+.row { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+.check { display: flex; gap: 6px; align-items: center; font-size: 13.5px; color: var(--muted); }
+.btn { background: var(--ink); color: var(--bg); border: 0; border-radius: 7px; padding: 9px 16px; font-weight: 600; cursor: pointer; }
+.btn.ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); font-weight: 500; }
+.linkbtn { background: none; border: 0; color: var(--accent); cursor: pointer; padding: 0; text-decoration: underline; text-underline-offset: 3px; font-size: 13.5px; }
+.err { color: var(--friction); font-size: 13.5px; }
+.banner { font-size: 13.5px; color: var(--muted); display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.pill { display: inline-flex; align-items: center; gap: 5px; font-size: 12px; font-weight: 600; padding: 2px 9px; border-radius: 99px; background: var(--sunken); color: var(--muted); white-space: nowrap; }
+.pill.flow { background: var(--flow-soft); color: var(--flow); } .pill.friction { background: var(--friction-soft); color: var(--friction); }
+.pill.blend { background: var(--blend-soft); color: var(--blend); } .pill.accent { background: var(--accent-soft); color: var(--accent); }
+
+/* big three + balance */
+.overview { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)) minmax(0, 1.2fr); gap: 14px; }
+.big { border-top: 2px solid var(--ink); padding-top: 10px; display: grid; gap: 4px; align-content: start; }
+.big .k { font-family: var(--mono); font-size: 11.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); }
+.big .v { font-family: var(--display); font-size: 26px; display: flex; gap: 8px; align-items: baseline; }
+.big .v .glyph { font-size: 22px; color: var(--accent); }
+.big .s { color: var(--muted); font-size: 13.5px; }
+.balance { display: grid; gap: 6px; border-top: 2px solid var(--ink); padding-top: 10px; }
+.bar { display: grid; grid-template-columns: 62px 1fr 18px; gap: 8px; align-items: center; font-size: 13px; }
+.bar .track { height: 8px; background: var(--sunken); border-radius: 99px; overflow: hidden; }
+.bar .fill { height: 100%; background: var(--accent); border-radius: 99px; }
+@media (max-width: 820px) { .overview { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+
+/* wheel + reading */
+.instrument { display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 28px; align-items: start; }
+@media (max-width: 900px) { .instrument { grid-template-columns: 1fr; } }
+.wheelbox { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 12px; display: grid; gap: 8px; }
+.wheelbox svg { width: 100%; max-width: 620px; height: auto; display: block; margin: 0 auto; }
+.wheel-planet { cursor: pointer; }
+.wheel-planet:hover circle.hit, .wheel-planet.sel circle.hit { fill: var(--accent-soft); }
+.wheel-planet:focus-visible { outline: none; }
+.wheel-planet:focus-visible circle.hit { stroke: var(--accent); stroke-width: 2; }
+.legend { display: flex; flex-wrap: wrap; gap: 6px 14px; font-size: 12.5px; color: var(--muted); justify-content: center; }
+.legend i { display: inline-block; width: 16px; height: 2px; vertical-align: middle; margin-right: 5px; }
+.reading { display: grid; gap: 14px; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 12px); }
+@media (max-width: 900px) { .reading { position: static; } }
+.reading .title { display: flex; gap: 12px; align-items: center; }
+.reading .title .glyph, .reading .title .ac { font-size: 34px; color: var(--accent); width: 44px; text-align: center; font-family: var(--glyph); }
+.reading .title .ac { font-family: var(--display); font-size: 22px; }
+.reading .pos { font-family: var(--mono); color: var(--muted); font-size: 13px; }
+.q { font-family: var(--display); font-size: 19px; color: var(--accent); }
+.kv { display: grid; grid-template-columns: max-content 1fr; gap: 6px 14px; font-size: 14px; }
+.kv dt { color: var(--muted); } .kv dd { margin: 0; }
+.note { background: var(--sunken); border-radius: 8px; padding: 10px 12px; font-size: 14px; }
+.chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.chipbtn { border: 1px solid var(--line); background: var(--surface); border-radius: 99px; padding: 4px 10px; font-size: 13px; cursor: pointer; display: inline-flex; gap: 6px; align-items: center; }
+.chipbtn[aria-pressed="true"] { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+
+/* sections */
+section > .head { display: flex; justify-content: space-between; align-items: end; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
+section > .head .sub { color: var(--muted); max-width: 62ch; font-size: 14.5px; }
+
+/* now cards */
+.now { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
+.card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
+.card .ttl { display: flex; justify-content: space-between; gap: 10px; align-items: start; }
+.card .ttl h3 { font-size: 18px; }
+.card .meta { font-size: 12.5px; color: var(--muted); font-family: var(--mono); }
+.card ul { margin: 0; padding-left: 18px; display: grid; gap: 3px; font-size: 14px; }
+.card .story { font-size: 14px; display: grid; gap: 4px; }
+.prep { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-family: var(--mono); }
+.empty { color: var(--muted); font-size: 14px; padding: 12px 0; }
+
+/* timeline */
+.seg { display: inline-flex; border: 1px solid var(--line); border-radius: 8px; overflow: hidden; }
+.seg button { border: 0; background: var(--surface); padding: 6px 14px; cursor: pointer; font-size: 13.5px; }
+.seg button[aria-pressed="true"] { background: var(--ink); color: var(--bg); }
+.tl-scroll { overflow-x: auto; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.tl { min-width: 720px; position: relative; padding: 10px 14px 14px; }
+.tl-row { display: grid; grid-template-columns: 150px 1fr; align-items: center; min-height: 30px; }
+.tl-row + .tl-row { border-top: 1px dashed var(--line); }
+.tl-label { font-size: 13px; color: var(--muted); display: flex; gap: 6px; align-items: center; padding-right: 8px; }
+.tl-label .glyph { color: var(--ink); font-size: 15px; width: 18px; text-align: center; }
+.tl-track { position: relative; height: 100%; min-height: 30px; }
+.tl-axis .tl-track { height: 22px; }
+.tl-month { position: absolute; top: 2px; font-family: var(--mono); font-size: 11px; color: var(--muted); transform: translateX(-50%); white-space: nowrap; }
+.tl-grid { position: absolute; top: 0; bottom: 0; width: 1px; background: var(--line); }
+.tl-today { position: absolute; top: 0; bottom: 0; width: 2px; background: var(--accent); z-index: 2; }
+.tl-bar { position: absolute; height: 18px; top: 50%; transform: translateY(-50%); border-radius: 5px; border: 0; padding: 0 6px; font-size: 11.5px; font-weight: 600; cursor: pointer;
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis; text-align: left; min-width: 8px; display: flex; align-items: center; gap: 4px; }
+.tl-bar.flow { background: var(--flow-soft); color: var(--flow); box-shadow: inset 0 0 0 1px var(--flow); }
+.tl-bar.friction { background: var(--friction-soft); color: var(--friction); box-shadow: inset 0 0 0 1px var(--friction); }
+.tl-bar.blend { background: var(--blend-soft); color: var(--blend); box-shadow: inset 0 0 0 1px var(--blend); }
+.tl-bar.retro { background: var(--sunken); color: var(--muted); box-shadow: inset 0 0 0 1px var(--line); }
+.tl-bar.sel { outline: 2px solid var(--ink); outline-offset: 1px; }
+.tl-exact { position: absolute; top: 50%; width: 8px; height: 8px; transform: translate(-50%, -50%) rotate(45deg); background: currentColor; pointer-events: none; }
+.tl-dot { position: absolute; top: 50%; transform: translate(-50%, -50%); font-family: var(--glyph); font-size: 14px; border: 0; background: none; cursor: pointer; padding: 0; line-height: 1; color: var(--ink); }
+.tl-dot.eclipse { color: var(--accent); font-size: 16px; }
+.detail { margin-top: 12px; }
+.chapters { display: grid; gap: 0; margin-top: 18px; }
+.chapter { display: grid; grid-template-columns: 150px minmax(0, 1fr); gap: 16px; padding: 14px 0; border-top: 1px solid var(--line); }
+.chapter .when { font-family: var(--mono); font-size: 12.5px; color: var(--muted); }
+.chapter h3 { font-size: 18px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.chapter .body { display: grid; gap: 6px; font-size: 14.5px; }
+@media (max-width: 640px) { .chapter { grid-template-columns: 1fr; gap: 4px; } .tl-row { grid-template-columns: 110px 1fr; } }
+.filters { display: flex; gap: 6px; flex-wrap: wrap; }
+
+/* manual */
+.manual { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 12px; }
+.manual .card h3 { display: flex; gap: 10px; align-items: baseline; }
+.manual .card h3 .glyph, .manual .card h3 .ac { color: var(--accent); }
+.manual .card h3 .ac { font-family: var(--display); font-size: 15px; }
+.aspects { display: grid; gap: 8px; }
+.asp { display: grid; grid-template-columns: 120px minmax(0, 1fr); gap: 14px; padding: 10px 0; border-top: 1px solid var(--line); font-size: 14.5px; }
+.asp .pair { font-family: var(--glyph); font-size: 17px; display: flex; gap: 6px; align-items: center; }
+@media (max-width: 560px) { .asp { grid-template-columns: 1fr; gap: 2px; } }
+
+.gloss { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 14px 24px; }
+.gloss dt { font-family: var(--display); font-size: 17px; }
+.gloss dd { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
+footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 4px; }
+@media (prefers-reduced-motion: no-preference) { .tl-bar, .chipbtn, .wheel-planet circle.hit { transition: background .15s, box-shadow .15s; } }
+
+/* guide */
+.guide { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 18px; }
+.guide summary { cursor: pointer; display: flex; gap: 12px; align-items: baseline; flex-wrap: wrap; list-style: none; }
+.guide summary::-webkit-details-marker { display: none; }
+.guide summary::after { content: "Hide"; margin-left: auto; font-size: 13px; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.guide:not([open]) summary::after { content: "Show"; }
+.guide-title { font-family: var(--display); font-size: 22px; }
+.guide .gloss { margin-top: 14px; }
+
+/* locked forecast */
+.locked { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 1fr); gap: 0; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+@media (max-width: 820px) { .locked { grid-template-columns: 1fr; } }
+.locked .peek { position: relative; padding: 18px; min-height: 300px; background: var(--sunken); overflow: hidden; }
+.locked .peek .ghost { position: absolute; height: 16px; border-radius: 5px; opacity: .55; filter: blur(1.5px); }
+.locked .peek .ghost.flow { background: var(--flow); } .locked .peek .ghost.friction { background: var(--friction); } .locked .peek .ghost.blend { background: var(--blend); }
+.locked .peek .lines { position: absolute; inset: 0; background: repeating-linear-gradient(90deg, transparent 0 calc(11.1% - 1px), var(--line) calc(11.1% - 1px) 11.1%); opacity: .7; }
+.locked .peek .stamp { position: absolute; left: 18px; bottom: 16px; right: 18px; display: grid; gap: 2px; }
+.locked .peek .stamp b { font-family: var(--display); font-weight: 400; font-size: 44px; line-height: 1; }
+.locked .offer { padding: 20px; display: grid; gap: 12px; align-content: start; }
+.locked .offer ul { margin: 0; padding-left: 18px; display: grid; gap: 4px; font-size: 14.5px; }
+.locked .price { font-family: var(--display); font-size: 34px; line-height: 1; }
+.locked .price small { font-family: var(--body); font-size: 13px; color: var(--muted); margin-left: 6px; }
+.locked .fine { font-size: 12.5px; color: var(--muted); }
+.restore { display: grid; gap: 8px; border-top: 1px solid var(--line); padding-top: 12px; }
+.restore .row input { flex: 1 1 200px; min-width: 0; background: var(--bg); border: 1px solid var(--line); border-radius: 7px; padding: 8px 10px; }
+.ok { color: var(--flow); font-size: 13.5px; }
+.unlocked-note { font-size: 13px; color: var(--muted); margin-bottom: 10px; display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div style="display:grid; gap:12px">
+      <div class="eyebrow">Birth chart · transits · forecast</div>
+      <h1>Manual of the Self</h1>
+      <p class="lede">Your birth chart read as a manual: what each part of you needs and how it works. Below it, the sky weather moving through your chart, with dates, so you can plan for it.</p>
+      <p class="motto">You can't change the weather. You can prepare for it.</p>
+    </div>
+    <form class="birth" id="birthForm" novalidate>
+      <div class="fields">
+        <label class="f">Name (optional)<input id="fName" type="text" autocomplete="off" maxlength="40" placeholder="Your name"></label>
+        <label class="f">Birth date<input id="fDate" type="date" required min="1900-01-01" max="2100-12-31"></label>
+        <label class="f">Birth time<input id="fTime" type="time" required></label>
+        <label class="f">Birth place<input id="fCity" list="cityList" autocomplete="off" placeholder="Start typing a city"></label>
+      </div>
+      <datalist id="cityList"></datalist>
+      <div id="manualPlace" class="fields" hidden>
+        <label class="f">Latitude (N +, S −)<input id="fLat" type="number" step="0.0001" min="-90" max="90" placeholder="32.7157"></label>
+        <label class="f">Longitude (E +, W −)<input id="fLon" type="number" step="0.0001" min="-180" max="180" placeholder="-117.1611"></label>
+        <label class="f">Time zone<select id="fTz"></select></label>
+      </div>
+      <div class="row">
+        <label class="check"><input id="fNoTime" type="checkbox"> I don't know my birth time</label>
+        <button type="button" class="linkbtn" id="togglePlace">City not listed? Enter coordinates</button>
+      </div>
+      <div class="row">
+        <button class="btn" type="submit">Read my chart</button>
+        <button class="btn ghost" type="button" id="sampleBtn">Show sample</button>
+        <span class="err" id="formErr" role="alert"></span>
+      </div>
+    </form>
+  </header>
+
+  <details class="guide" id="guide" open>
+    <summary><span class="eyebrow">New to astrology?</span> <span class="guide-title">How to read this</span></summary>
+    <dl class="gloss" id="gloss"></dl>
+  </details>
+
+  <div class="banner" id="banner"></div>
+
+  <div class="overview" id="overview"></div>
+
+  <div class="instrument">
+    <div class="wheelbox">
+      <div class="row" style="justify-content:space-between">
+        <span class="eyebrow">Birth chart</span>
+        <label class="check"><input id="showTransits" type="checkbox" checked> Show today's sky</label>
+      </div>
+      <div id="wheel"></div>
+      <div class="legend">
+        <span><i style="background:var(--flow)"></i>flowing aspect</span>
+        <span><i style="background:var(--friction)"></i>tense aspect</span>
+        <span><i style="background:var(--blend)"></i>conjunction</span>
+        <span id="legendTransit"><i style="background:var(--accent)"></i>today's sky (outer ring)</span>
+      </div>
+      <p class="banner" style="justify-content:center">Tap any planet to read about it.</p>
+    </div>
+    <aside class="reading" id="reading" aria-live="polite"></aside>
+  </div>
+
+  <section id="nowSec">
+    <div class="head">
+      <div style="display:grid; gap:6px"><div class="eyebrow">Today</div><h2>Sky weather now</h2></div>
+      <p class="sub" id="nowSub"></p>
+    </div>
+    <div class="now" id="now"></div>
+  </section>
+
+  <section id="calSec">
+    <div class="head">
+      <div style="display:grid; gap:6px"><div class="eyebrow">Full forecast</div><h2>Weather calendar</h2></div>
+      <div class="row" id="segRow" hidden>
+        <div class="seg" role="group" aria-label="Forecast length">
+          <button type="button" data-m="3" aria-pressed="false">3 months</button>
+          <button type="button" data-m="6" aria-pressed="true">6 months</button>
+          <button type="button" data-m="9" aria-pressed="false">9 months</button>
+        </div>
+      </div>
+    </div>
+    <div class="locked" id="locked" hidden></div>
+    <div id="paid" hidden>
+    <p class="sub" style="color:var(--muted); font-size:14.5px; margin-bottom:12px; max-width:70ch">Each bar is a slow planet making an angle to your chart; the diamond marks the exact date, when it peaks. Slow planets shape whole chapters; Mars brings shorter bursts. Tap a bar for its story.</p>
+    <div class="tl-scroll"><div class="tl" id="timeline"></div></div>
+    <div class="detail" id="tlDetail"></div>
+    <div class="row" style="margin-top:22px; justify-content:space-between">
+      <h3>Chapters ahead</h3>
+      <div class="filters" id="filters">
+        <button type="button" class="chipbtn" data-f="all" aria-pressed="true">All</button>
+        <button type="button" class="chipbtn" data-f="flow" aria-pressed="false">Supportive</button>
+        <button type="button" class="chipbtn" data-f="friction" aria-pressed="false">Challenging</button>
+        <button type="button" class="chipbtn" data-f="blend" aria-pressed="false">New cycles</button>
+        <button type="button" class="chipbtn" data-f="slow" aria-pressed="false">Big shifts only</button>
+      </div>
+    </div>
+    <div class="chapters" id="chapters"></div>
+    </div>
+  </section>
+
+  <section>
+    <div class="head">
+      <div style="display:grid; gap:6px"><div class="eyebrow">The manual</div><h2>How you're built</h2></div>
+      <p class="sub">Each planet is a part of you. Its sign is that part's style; its house is where in life it shows up. Strengths and growth edges come with every placement.</p>
+    </div>
+    <div class="manual" id="manual"></div>
+  </section>
+
+  <section>
+    <div class="head">
+      <div style="display:grid; gap:6px"><div class="eyebrow">Inner dialogue</div><h2>How your parts talk to each other</h2></div>
+      <p class="sub">Aspects are angles between planets in your birth chart: built-in harmonies and tensions. Tensions aren't flaws; they're where much of your drive comes from.</p>
+    </div>
+    <div class="aspects" id="aspects"></div>
+  </section>
+
+  <footer>
+    <span>The free chart is calculated in your browser. The full forecast is calculated on our server; birth details are used for that calculation and not stored. Payments are handled by Stripe.</span>
+    <span>Tropical zodiac, Placidus houses (Porphyry above 66° latitude), true lunar node. Positions from the Astronomy Engine library.</span>
+    <span>Offered as a tool for reflection and planning. Your choices are always your own.</span>
+  </footer>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/astronomy-engine@2.1.19/astronomy.browser.min.js"></script>
+<script>
+/*__LIBS__*/
+</script>
+<script>
+/*__APP__*/
+</script>

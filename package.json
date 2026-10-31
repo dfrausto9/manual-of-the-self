@@ -1,0 +1,17 @@
+{
+  "name": "manual-of-the-self",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Birth chart as a manual of the self, with a paid transit forecast.",
+  "main": "server.js",
+  "scripts": {
+    "build": "node build.js",
+    "start": "node server.js"
+  },
+  "engines": { "node": ">=18" },
+  "dependencies": {
+    "astronomy-engine": "2.1.19",
+    "express": "4.21.2",
+    "stripe": "17.7.0"
+  }
+}
