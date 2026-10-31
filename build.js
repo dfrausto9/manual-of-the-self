@@ -16,6 +16,16 @@ const html = `<!doctype html>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="description" content="Your birth chart read as a manual of the self, with a dated forecast of the sky weather moving through it.">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="theme-color" content="#1b1e32">
+<meta property="og:type" content="website">
+<meta property="og:title" content="Manual of the Self">
+<meta property="og:description" content="Your birth chart as a manual of the self. Free chart reading, plus a personal forecast of the sky weather ahead.">
+<meta property="og:url" content="https://manual-of-the-self.onrender.com/">
+<meta property="og:image" content="https://manual-of-the-self.onrender.com/og.png">
+<meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
+<meta name="twitter:card" content="summary_large_image">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
 ${headExtra}
 </head>
@@ -28,6 +38,7 @@ fs.mkdirSync(path.join(__dirname, "public"), { recursive: true });
 fs.writeFileSync(path.join(__dirname, "public/index.html"), html);
 fs.mkdirSync(path.join(__dirname, "public/vendor"), { recursive: true });
 fs.copyFileSync(path.join(__dirname, "node_modules/astronomy-engine/astronomy.browser.min.js"), path.join(__dirname, "public/vendor/astronomy.browser.min.js"));
+for (const f of fs.readdirSync(path.join(__dirname, "static"))) fs.copyFileSync(path.join(__dirname, "static", f), path.join(__dirname, "public", f));
 if (!html.includes("/vendor/astronomy.browser.min.js")) throw new Error("astronomy script tag not replaced");
 if (/transitCalendar|skyEvents/.test(html)) throw new Error("forecast code leaked into the public page");
 console.log(`built public/index.html (${(html.length / 1024).toFixed(0)} KB)`);
