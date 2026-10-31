@@ -14,7 +14,50 @@
 
   // ---------------- form ----------------
   const cityByName = new Map(CITIES.map(c => [c.name.toLowerCase(), c]));
-  $("#cityList").innerHTML = CITIES.map(c => `<option value="${esc(c.name)}"></option>`).join("");
+  // City picker: a dropdown under the field (replaces the browser's own suggestion list, which some browsers misplace)
+  (() => {
+    const input = $("#fCity"), menu = $("#cityMenu");
+    let items = [], active = -1;
+    const norm = s => s.normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+    function open(list) {
+      items = list; active = list.length ? 0 : -1;
+      const q = norm(input.value.trim());
+      menu.innerHTML = list.length ? list.map((c, i) => {
+        const n = norm(c.name), at = q ? n.indexOf(q) : -1;
+        const label = at >= 0 ? esc(c.name.slice(0, at)) + "<mark>" + esc(c.name.slice(at, at + q.length)) + "</mark>" + esc(c.name.slice(at + q.length)) : esc(c.name);
+        return `<li role="option" id="city-${i}" data-i="${i}" aria-selected="${i === active}">${label}</li>`;
+      }).join("") : `<li class="none" role="option" aria-disabled="true">No match. Try a nearby big city, or enter coordinates.</li>`;
+      menu.hidden = false; input.setAttribute("aria-expanded", "true");
+      if (active >= 0) input.setAttribute("aria-activedescendant", "city-" + active);
+    }
+    function close() { menu.hidden = true; input.setAttribute("aria-expanded", "false"); input.removeAttribute("aria-activedescendant"); }
+    function search() {
+      const q = norm(input.value.trim());
+      if (!q) return open(CITIES.slice(0, 8));
+      const starts = [], has = [];
+      for (const c of CITIES) { const n = norm(c.name); if (n.startsWith(q)) starts.push(c); else if (n.includes(q)) has.push(c); }
+      open(starts.concat(has).slice(0, 8));
+    }
+    function pick(i) { if (items[i]) { input.value = items[i].name; close(); } }
+    function move(d) {
+      if (menu.hidden) return search();
+      if (!items.length) return;
+      active = (active + d + items.length) % items.length;
+      menu.querySelectorAll("li[data-i]").forEach(li => li.setAttribute("aria-selected", +li.dataset.i === active));
+      input.setAttribute("aria-activedescendant", "city-" + active);
+      menu.querySelector(`#city-${active}`)?.scrollIntoView({ block: "nearest" });
+    }
+    input.addEventListener("input", search);
+    input.addEventListener("focus", search);
+    input.addEventListener("keydown", e => {
+      if (e.key === "ArrowDown") { e.preventDefault(); move(1); }
+      else if (e.key === "ArrowUp") { e.preventDefault(); move(-1); }
+      else if (e.key === "Enter" && !menu.hidden && active >= 0) { e.preventDefault(); pick(active); }
+      else if (e.key === "Escape") close();
+    });
+    menu.addEventListener("mousedown", e => { const li = e.target.closest("li[data-i]"); if (li) { e.preventDefault(); pick(+li.dataset.i); } });
+    input.addEventListener("blur", () => setTimeout(close, 120));
+  })();
   let zones = [];
   try { zones = Intl.supportedValuesOf("timeZone"); } catch (e) { zones = [...new Set(CITIES.map(c => c.tz))].sort(); }
   $("#fTz").innerHTML = zones.map(z => `<option>${esc(z)}</option>`).join("");
