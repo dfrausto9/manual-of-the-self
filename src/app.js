@@ -367,7 +367,7 @@
         </ul>
         <div class="price">${priceText(cfg)}<small>one time</small></div>
         <div class="row">${buy}</div>
-        ${cfg.payments ? `<span class="fine">7-day refund if it's not for you. Questions: <a href="mailto:${esc(cfg.support || "tarotrightnow@gmail.com")}">${esc(cfg.support || "tarotrightnow@gmail.com")}</a></span>` : ""}
+        ${cfg.payments ? `<span class="fine">All sales final; the forecast is delivered instantly. Questions: <a href="mailto:${esc(cfg.support || "tarotrightnow@gmail.com")}">${esc(cfg.support || "tarotrightnow@gmail.com")}</a></span>` : ""}
         <button type="button" class="linkbtn" id="seeSample" style="justify-self:start">See a full example on the sample chart</button>
         <p class="err" id="buyErr" role="alert"></p>
         ${cfg.payments ? `<div class="restore">

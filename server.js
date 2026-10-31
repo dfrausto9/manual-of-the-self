@@ -119,7 +119,7 @@ app.post("/api/checkout", limit(10), async (req, res) => {
       metadata: { chart_hash: chartHash(key), product: "full-forecast-v1" },
       payment_intent_data: { metadata: { chart_hash: chartHash(key), product: "full-forecast-v1" } },
       allow_promotion_codes: true,
-      custom_text: { submit: { message: `Delivered instantly on the Manual of the Self site. 7-day refund if it's not for you. Questions: ${SUPPORT_EMAIL}` } },
+      custom_text: { submit: { message: `Delivered instantly on the Manual of the Self site. All sales are final. Questions or problems with your purchase: ${SUPPORT_EMAIL}` } },
       success_url: `${origin(req)}/?paid={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin(req)}/?canceled=1`,
     });
