@@ -165,6 +165,10 @@ section > .head .sub { color: var(--muted); max-width: 62ch; font-size: 14.5px; 
 .gloss dt { font-family: var(--display); font-size: 17px; }
 .gloss dd { margin: 2px 0 0; color: var(--muted); font-size: 14px; }
 footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--line); padding-top: 14px; display: grid; gap: 4px; }
+.policies { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 12px 24px; padding-bottom: 12px; margin-bottom: 4px; border-bottom: 1px solid var(--line); }
+.policies div { display: grid; gap: 2px; min-width: 0; }
+.policies strong { font-family: var(--display); font-weight: 400; font-size: 15px; color: var(--ink); }
+.policies a, .fine a { color: var(--accent); overflow-wrap: anywhere; }
 @media (prefers-reduced-motion: no-preference) { .tl-bar, .chipbtn, .wheel-planet circle.hit { transition: background .15s, box-shadow .15s; } }
 
 /* guide */
@@ -322,7 +326,11 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
   </section>
 
   <footer>
-    <span>The free chart is calculated in your browser. The full forecast is calculated on our server; birth details are used for that calculation and not stored. Payments are handled by Stripe.</span>
+    <div class="policies">
+      <div><strong>Refunds</strong><span>If the full forecast isn't for you, email within 7 days of purchase for a full refund.</span></div>
+      <div><strong>Contact</strong><span>Questions or refunds: <a href="mailto:tarotrightnow@gmail.com">tarotrightnow@gmail.com</a></span></div>
+      <div><strong>Privacy</strong><span>The free chart is calculated in your browser. The full forecast is calculated on our server; birth details are used for that calculation and not stored. Payments are handled by Stripe, and your unlock is remembered in your browser.</span></div>
+    </div>
     <span>Tropical zodiac, Placidus houses (Porphyry above 66° latitude), true lunar node. Positions from the Astronomy Engine library.</span>
     <span>Offered as a tool for reflection and planning. Your choices are always your own.</span>
   </footer>

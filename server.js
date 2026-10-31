@@ -13,6 +13,7 @@
  *   STRIPE_SECRET_KEY   sk_test_... while testing, sk_live_... to take real payments
  *   UNLOCK_SECRET       optional; random string used to sign unlock tokens (falls back to one derived from the Stripe key)
  *   PRICE_CENTS         optional; default 900 ($9.00)
+ *   SUPPORT_EMAIL       optional; shown to buyers (default tarotrightnow@gmail.com)
  *   PORT                set by Render
  */
 const path = require("path");
@@ -28,6 +29,7 @@ const stripe = STRIPE_KEY ? require("stripe")(STRIPE_KEY) : null;
 const SECRET = (process.env.UNLOCK_SECRET || "").trim() ||
   (STRIPE_KEY ? crypto.createHash("sha256").update("manual-of-the-self:" + STRIPE_KEY).digest("hex") : "dev-only-secret");
 const PRICE_CENTS = parseInt(process.env.PRICE_CENTS || "900", 10);
+const SUPPORT_EMAIL = (process.env.SUPPORT_EMAIL || "tarotrightnow@gmail.com").trim();
 const TEST_MODE = STRIPE_KEY.startsWith("sk_test_");
 // Sample chart shown to new visitors (Chicago, 15 Jun 1995 09:20) — its full forecast is an open demo
 const SAMPLE_KEY = ENGINE.chartKey({ date: "1995-06-15", time: "09:20", noTime: false, lat: 41.8781, lon: -87.6298, tz: "America/Chicago" });
@@ -82,7 +84,7 @@ setInterval(() => { const now = Date.now(); for (const hits of limiters) for (co
 
 // ---------------- API ----------------
 app.get("/api/config", (req, res) => {
-  res.json({ payments: !!stripe, testMode: TEST_MODE, price: PRICE_CENTS, currency: "usd" });
+  res.json({ payments: !!stripe, testMode: TEST_MODE, price: PRICE_CENTS, currency: "usd", support: SUPPORT_EMAIL });
 });
 
 // Free teaser: how much is in the forecast, without dates or details
@@ -117,6 +119,7 @@ app.post("/api/checkout", limit(10), async (req, res) => {
       metadata: { chart_hash: chartHash(key), product: "full-forecast-v1" },
       payment_intent_data: { metadata: { chart_hash: chartHash(key), product: "full-forecast-v1" } },
       allow_promotion_codes: true,
+      custom_text: { submit: { message: `Delivered instantly on the Manual of the Self site. 7-day refund if it's not for you. Questions: ${SUPPORT_EMAIL}` } },
       success_url: `${origin(req)}/?paid={CHECKOUT_SESSION_ID}`,
       cancel_url: `${origin(req)}/?canceled=1`,
     });
