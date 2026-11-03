@@ -13,6 +13,9 @@
  *   STRIPE_SECRET_KEY   sk_test_... while testing, sk_live_... to take real payments
  *   UNLOCK_SECRET       optional; random string used to sign unlock tokens (falls back to one derived from the Stripe key)
  *   PRICE_CENTS         optional; default 900 ($9.00)
+ *   SALE_PRICE_CENTS    optional sale price (default 499 = $4.99); set to 0 to turn the sale off
+ *   SALE_STARTS / SALE_ENDS  optional ISO times for the sale window (default: now until Dec 1 2026 00:00 Pacific)
+ *   SALE_NAME           optional label shown on the site (default "Black Friday special")
  *   SUPPORT_EMAIL       optional; shown to buyers (default tarotrightnow@gmail.com)
  *   PORT                set by Render
  */
@@ -29,6 +32,15 @@ const stripe = STRIPE_KEY ? require("stripe")(STRIPE_KEY) : null;
 const SECRET = (process.env.UNLOCK_SECRET || "").trim() ||
   (STRIPE_KEY ? crypto.createHash("sha256").update("manual-of-the-self:" + STRIPE_KEY).digest("hex") : "dev-only-secret");
 const PRICE_CENTS = parseInt(process.env.PRICE_CENTS || "900", 10);
+// Time-boxed sale: the price drops between SALE_STARTS and SALE_ENDS and goes back by itself afterwards
+const SALE = {
+  cents: parseInt(process.env.SALE_PRICE_CENTS ?? "499", 10),
+  starts: Date.parse(process.env.SALE_STARTS || "2026-11-01T00:00:00Z"),
+  ends: Date.parse(process.env.SALE_ENDS || "2026-12-01T08:00:00Z"),   // midnight Pacific, after Cyber Monday (Nov 30)
+  name: (process.env.SALE_NAME || "Black Friday special").trim(),
+};
+const saleOn = (now = Date.now()) => SALE.cents > 0 && SALE.cents < PRICE_CENTS && now >= SALE.starts && now < SALE.ends;
+const priceNow = () => (saleOn() ? SALE.cents : PRICE_CENTS);
 const SUPPORT_EMAIL = (process.env.SUPPORT_EMAIL || "tarotrightnow@gmail.com").trim();
 const TEST_MODE = STRIPE_KEY.startsWith("sk_test_");
 // Sample chart shown to new visitors (Chicago, 15 Jun 1995 09:20) — its full forecast is an open demo
@@ -84,7 +96,8 @@ setInterval(() => { const now = Date.now(); for (const hits of limiters) for (co
 
 // ---------------- API ----------------
 app.get("/api/config", (req, res) => {
-  res.json({ payments: !!stripe, testMode: TEST_MODE, price: PRICE_CENTS, currency: "usd", support: SUPPORT_EMAIL });
+  res.json({ payments: !!stripe, testMode: TEST_MODE, price: priceNow(), regularPrice: PRICE_CENTS, currency: "usd", support: SUPPORT_EMAIL,
+             sale: saleOn() ? { name: SALE.name, endsAt: new Date(SALE.ends).toISOString() } : null });
 });
 
 // Free teaser: how much is in the forecast, without dates or details
@@ -112,8 +125,8 @@ app.post("/api/checkout", limit(10), async (req, res) => {
   try {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
-      line_items: [{ quantity: 1, price_data: { currency: "usd", unit_amount: PRICE_CENTS, product_data: {
-        name: "Manual of the Self: Full Forecast",
+      line_items: [{ quantity: 1, price_data: { currency: "usd", unit_amount: priceNow(), product_data: {
+        name: "Manual of the Self: Full Forecast" + (saleOn() ? ` (${SALE.name})` : ""),
         description: "Unlocks the weather calendar and chapters ahead for one birth chart. It updates every time you return.",
       } } }],
       metadata: { chart_hash: chartHash(key), product: "full-forecast-v1" },
