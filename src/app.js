@@ -295,7 +295,19 @@
     try { const r = await fetch("/api/config"); config = r.ok ? await r.json() : { offline: true }; } catch (e) { config = { offline: true }; }
     return config;
   }
-  const priceText = c => `$${(c.price / 100).toFixed(c.price % 100 ? 2 : 0)}`;
+  const money = cents => `$${(cents / 100).toFixed(cents % 100 ? 2 : 0)}`;
+  const priceText = c => money(c.price);
+  // last day of the sale, in Pacific time ("Nov 30")
+  const saleEnds = c => new Date(Date.parse(c.sale.endsAt) - 1).toLocaleDateString(undefined, { timeZone: "America/Los_Angeles", month: "short", day: "numeric" });
+  const priceHtml = c => c.sale ? `<s>${money(c.regularPrice)}</s> ${priceText(c)}` : priceText(c);
+  async function renderSale() {
+    const c = await getConfig();
+    if (!c.sale || !c.regularPrice) return;
+    const bar = $("#salebar");
+    bar.innerHTML = `<span class="pill accent">${esc(c.sale.name)}</span><span>Full weather forecast <strong>${priceText(c)}</strong> <s>${money(c.regularPrice)}</s>, one time per profile. Ends ${esc(saleEnds(c))}.</span>`;
+    bar.hidden = false;
+    $("#priceLine").innerHTML = `<s>${money(c.regularPrice)}</s> ${priceText(c)} one time, per profile (${esc(c.sale.name)} through ${esc(saleEnds(c))})`;
+  }
 
   function showPaid(on) { $("#paid").hidden = !on; $("#segRow").hidden = !on; $("#locked").hidden = on; }
 
@@ -366,7 +378,8 @@
           <li>A story and preparation notes for each chapter</li>
           <li>One payment, kept forever for this chart: it moves forward every time you come back</li>
         </ul>
-        <div class="price">${priceText(cfg)}<small>one time</small></div>
+        ${cfg.sale ? `<span class="pill accent" style="justify-self:start">${esc(cfg.sale.name)} · ends ${esc(saleEnds(cfg))}</span>` : ""}
+        <div class="price">${priceHtml(cfg)}<small>one time</small></div>
         <div class="row">${buy}</div>
         ${cfg.payments ? `<span class="fine">All sales final; the forecast is delivered instantly. Questions: <a href="mailto:${esc(cfg.support || "tarotrightnow@gmail.com")}">${esc(cfg.support || "tarotrightnow@gmail.com")}</a></span>` : ""}
         <button type="button" class="linkbtn" id="seeSample" style="justify-self:start">See a full example on the sample chart</button>
@@ -654,6 +667,7 @@
     if (saved && saved.date && !saved.sample && !getProfiles().length) { try { if (resolve({ ...saved })) saveProfile(saved); } catch (e) {} }
     handleBackupLink();
     renderProfiles();
+    renderSale();
     const claimed = await handleReturn();
     const start = claimed || (saved && saved.date ? saved : { ...SAMPLE });
     fillForm(start); load(start);
