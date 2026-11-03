@@ -214,6 +214,41 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
 .mark .m-acc { fill: var(--accent); }
 .mark .m-ink { fill: none; stroke: var(--ink); stroke-width: 7; stroke-linejoin: round; stroke-linecap: round; }
 .mark .m-line { fill: none; stroke: var(--accent); stroke-width: 4.5; stroke-linecap: round; }
+
+/* hero promise + checks */
+.tagline { font-family: var(--display); font-size: clamp(22px, 3.2vw, 30px); line-height: 1.2; max-width: 32ch; }
+.tagline em { font-style: normal; color: var(--accent); }
+.pricing { font-size: 14px; color: var(--muted); max-width: 62ch; }
+.pricing strong { color: var(--ink); font-weight: 600; }
+.checks { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px 18px; font-size: 13.5px; color: var(--muted); }
+.checks li { display: inline-flex; align-items: center; gap: 6px; }
+.checks li::before { content: ""; width: 15px; height: 15px; border-radius: 50%; background: var(--flow-soft) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M4 8.5l2.5 2.5L12 5.5' fill='none' stroke='%2323786e' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/11px no-repeat; flex: none; }
+
+/* saved profiles: a slim bar + a manage dialog */
+.profbar { display: flex; align-items: center; gap: 10px; min-width: 0; padding: 8px 10px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); margin-top: -22px; }
+.profbar .eyebrow { flex: none; }
+.profchips { display: flex; gap: 6px; overflow-x: auto; min-width: 0; flex: 1; scrollbar-width: thin; padding: 2px; }
+.profchip { flex: none; display: inline-flex; align-items: center; gap: 6px; border: 1px solid var(--line); background: var(--bg); border-radius: 99px; padding: 4px 11px; font-size: 13px; cursor: pointer; white-space: nowrap; }
+.profchip[aria-current="true"] { border-color: var(--accent); background: var(--accent-soft); color: var(--accent); font-weight: 600; }
+.profchip .st { font-size: 11px; color: var(--muted); }
+.profchip .st.on { color: var(--flow); }
+.profbar .linkbtn { flex: none; }
+.profbar .hint { font-size: 13px; color: var(--muted); }
+dialog.profdlg { border: 1px solid var(--line); border-radius: 14px; background: var(--surface); color: var(--ink); padding: 0; width: min(560px, calc(100vw - 32px)); max-height: min(80vh, 720px); }
+dialog.profdlg::backdrop { background: rgb(8 9 16 / .55); }
+.profdlg .in { padding: 20px; display: grid; gap: 14px; }
+.profdlg .top { display: flex; justify-content: space-between; align-items: center; gap: 10px; }
+.proflist { display: grid; gap: 8px; }
+.profrow { display: grid; grid-template-columns: 1fr auto; gap: 4px 10px; align-items: center; padding: 10px 12px; border: 1px solid var(--line); border-radius: 9px; background: var(--bg); }
+.profrow[aria-current="true"] { border-color: var(--accent); }
+.profrow .nm { font-weight: 600; }
+.profrow .meta { font-size: 12.5px; color: var(--muted); grid-column: 1; }
+.profrow .acts { grid-row: 1 / span 2; grid-column: 2; display: flex; gap: 6px; }
+.btn.sm { padding: 5px 10px; font-size: 13px; }
+.profdlg .pnote { font-size: 12.5px; color: var(--muted); }
+@media (max-width: 560px) { .profrow { grid-template-columns: minmax(0, 1fr); } .profrow .acts { grid-row: auto; grid-column: 1; margin-top: 6px; } }
+.profdlg, .profdlg * { min-width: 0; }
+.profdlg .backup { display: grid; gap: 8px; padding-top: 12px; border-top: 1px solid var(--line); }
 </style>
 
 <div class="wrap">
@@ -225,8 +260,15 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
         <path d="M44 100 C 60 96, 76 97, 88 103 M44 116 C 60 112, 76 113, 88 119 M112 103 C 124 97, 140 96, 156 100 M112 119 C 124 113, 140 112, 156 116" class="m-line"/>
       </svg><div class="eyebrow">Birth chart · transits · forecast</div></div>
       <h1>Manual of the Self</h1>
+      <p class="tagline">Your personal astrological manual, <em>stored right in your browser.</em></p>
       <p class="lede">Your birth chart read as a manual: what each part of you needs and how it works. Below it, the sky weather moving through your chart, with dates, so you can plan for it.</p>
       <p class="motto">You can't change the weather. You can prepare for it.</p>
+      <p class="pricing"><strong>Free:</strong> your full birth chart for anyone you like, saved in this browser with no account or password. <strong>Weather forecast:</strong> $9 one time, per profile.</p>
+      <ul class="checks">
+        <li>Free unlimited basic charts</li>
+        <li>Saved privately in your browser</li>
+        <li>Move profiles to any device with a backup link</li>
+      </ul>
     </div>
     <form class="birth" id="birthForm" novalidate>
       <div class="fields">
@@ -253,6 +295,30 @@ footer { color: var(--muted); font-size: 12.5px; border-top: 1px solid var(--lin
       </div>
     </form>
   </header>
+
+  <div class="profbar" id="profbar" aria-label="Saved profiles">
+    <span class="eyebrow">Saved profiles</span>
+    <div class="profchips" id="profchips"></div>
+    <button type="button" class="linkbtn" id="profManage">Manage</button>
+  </div>
+
+  <dialog class="profdlg" id="profDlg" aria-labelledby="profDlgTitle">
+    <div class="in">
+      <div class="top"><h3 id="profDlgTitle">Saved profiles</h3><button type="button" class="btn ghost sm" id="profClose">Done</button></div>
+      <p class="pnote">Every chart you read is saved here automatically, in this browser only. No account, no password. The free chart is always free; the weather forecast is a $9 one-time unlock per profile.</p>
+      <div class="proflist" id="proflist"></div>
+      <div class="backup">
+        <strong>Use your profiles on another device</strong>
+        <p class="pnote">Copy your backup link and open it on your phone or another browser. It carries your saved profiles and any forecasts you've unlocked. Keep it private, like a key. Clearing this browser's data deletes saved profiles, so a backup link is also your safety net.</p>
+        <div class="row">
+          <button type="button" class="btn sm" id="profCopy">Copy backup link</button>
+          <button type="button" class="btn ghost sm" id="profDownload">Download backup file</button>
+          <label class="btn ghost sm" style="cursor:pointer">Import file<input type="file" id="profImport" accept=".json,application/json" hidden></label>
+          <span class="pnote" id="profMsg" role="status"></span>
+        </div>
+      </div>
+    </div>
+  </dialog>
 
   <details class="guide" id="guide" open>
     <summary><span class="eyebrow">New to astrology?</span> <span class="guide-title">How to read this</span></summary>

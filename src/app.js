@@ -116,7 +116,8 @@
     const c = resolve(inp);
     if (!c) { $("#formErr").textContent = "Couldn't find that place."; return; }
     state.input = inp; state.chart = c; state.selected = "sun"; state.selectedEvent = null; state.now = new Date();
-    renderAll();
+    if (!inp.sample) saveProfile(inp);
+    renderAll(); renderProfiles();
   }
 
   // ---------------- render ----------------
@@ -281,7 +282,7 @@
   // The full forecast is calculated on the server and needs an unlock token (the sample chart is open to all).
   const TOKENS = "manual-of-the-self.tokens", PENDING = "manual-of-the-self.pending";
   const getTokens = () => { try { return JSON.parse(localStorage.getItem(TOKENS) || "{}"); } catch (e) { return {}; } };
-  const setToken = (k, t) => { try { const m = getTokens(); if (t) m[k] = t; else delete m[k]; localStorage.setItem(TOKENS, JSON.stringify(m)); } catch (e) {} };
+  const setToken = (k, t) => { try { const m = getTokens(); if (t) m[k] = t; else delete m[k]; localStorage.setItem(TOKENS, JSON.stringify(m)); } catch (e) {} renderProfiles(); };
   const birthOf = inp => ({ date: inp.date, time: inp.time, noTime: !!inp.noTime, lat: inp.lat, lon: inp.lon, tz: inp.tz });
   async function post(path, body) {
     const r = await fetch(path, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
@@ -513,6 +514,113 @@
   }
   $("#gloss").innerHTML = L.GLOSSARY.map(([t, d]) => `<div><dt>${t}</dt><dd>${esc(d)}</dd></div>`).join("");
 
+
+  // ---------- saved profiles ----------
+  // Every chart a visitor reads is kept in this browser (no account). A backup link or file moves them, with any unlock tokens, to another device.
+  const PROFILES = "manual-of-the-self.profiles";
+  const getProfiles = () => { try { const a = JSON.parse(localStorage.getItem(PROFILES) || "[]"); return Array.isArray(a) ? a : []; } catch (e) { return []; } };
+  const setProfiles = a => { try { localStorage.setItem(PROFILES, JSON.stringify(a)); } catch (e) {} };
+  const FIELDS = ["name", "date", "time", "noTime", "city", "manual", "lat", "lon", "tz", "label"];
+  const clean = inp => { const o = {}; for (const f of FIELDS) if (inp[f] !== undefined) o[f] = inp[f]; return o; };
+  function saveProfile(inp) {
+    const key = E.chartKey(inp), list = getProfiles(), i = list.findIndex(p => p.key === key);
+    const entry = { ...clean(inp), key, saved: (i >= 0 && list[i].saved) || new Date().toISOString().slice(0, 10) };
+    if (i >= 0) { if (!inp.name && list[i].name) entry.name = list[i].name; list[i] = entry; } else list.push(entry);
+    setProfiles(list);
+  }
+  const profName = (p, i) => p.name || `Chart ${i + 1}`;
+  const bornText = p => {
+    const [y, m, d] = p.date.split("-").map(Number);
+    const day = new Date(Date.UTC(y, m - 1, d)).toLocaleDateString(undefined, { timeZone: "UTC", month: "short", day: "numeric", year: "numeric" });
+    return `${day}${p.noTime ? "" : " · " + p.time} · ${p.label || p.city || ""}`;
+  };
+  function renderProfiles() {
+    const bar = $("#profbar"); if (!bar) return;
+    const list = getProfiles(), tokens = getTokens(), cur = state.input && !state.input.sample ? E.chartKey(state.input) : null;
+    $("#profchips").innerHTML = list.length ? list.map((p, i) => `<button type="button" class="profchip" data-k="${esc(p.key)}" aria-current="${p.key === cur}">${esc(profName(p, i))}<span class="st${tokens[p.key] ? " on" : ""}">${tokens[p.key] ? "forecast ✓" : "free"}</span></button>`).join("")
+      : `<span class="hint">Read a chart above and it's saved here, free. No account needed.</span>`;
+    $("#profManage").hidden = !list.length;
+    $("#proflist").innerHTML = list.map((p, i) => `<div class="profrow" aria-current="${p.key === cur}">
+        <span class="nm">${esc(profName(p, i))} <span class="pill ${tokens[p.key] ? "flow" : ""}">${tokens[p.key] ? "Forecast unlocked" : "Free chart"}</span></span>
+        <span class="meta">${esc(bornText(p))}</span>
+        <span class="acts"><button type="button" class="btn sm" data-open="${esc(p.key)}">Open</button><button type="button" class="btn ghost sm" data-ren="${esc(p.key)}">Rename</button><button type="button" class="btn ghost sm" data-del="${esc(p.key)}" aria-label="Delete ${esc(profName(p, i))}">Delete</button></span>
+      </div>`).join("") || `<p class="pnote">No saved profiles yet.</p>`;
+  }
+  function openProfile(key) {
+    const p = getProfiles().find(x => x.key === key); if (!p) return;
+    const inp = clean(p); fillForm(inp); load(inp);
+    try { localStorage.setItem(STORE, JSON.stringify(inp)); } catch (e) {}
+  }
+  $("#profchips").addEventListener("click", e => { const b = e.target.closest("[data-k]"); if (b) openProfile(b.dataset.k); });
+  const dlg = $("#profDlg");
+  $("#profManage").addEventListener("click", () => { $("#profMsg").textContent = ""; renderProfiles(); dlg.showModal(); });
+  $("#profClose").addEventListener("click", () => dlg.close());
+  dlg.addEventListener("click", e => { if (e.target === dlg) dlg.close(); });
+  $("#proflist").addEventListener("click", e => {
+    const t = e.target.closest("button"); if (!t) return;
+    if (t.dataset.open) { dlg.close(); openProfile(t.dataset.open); $("#banner").scrollIntoView({ block: "start" }); }
+    if (t.dataset.ren) {
+      const list = getProfiles(), p = list.find(x => x.key === t.dataset.ren);
+      const n = prompt("Name for this profile", p.name || ""); if (n === null) return;
+      p.name = n.trim().slice(0, 40); setProfiles(list);
+      if (state.input && E.chartKey(state.input) === p.key) { state.input.name = p.name; $("#fName").value = p.name; renderAll(); }
+      renderProfiles();
+    }
+    if (t.dataset.del) {
+      const list = getProfiles(), p = list.find(x => x.key === t.dataset.del);
+      const paid = !!getTokens()[p.key];
+      if (!confirm(`Delete “${p.name || "this chart"}” from this browser?${paid ? " Its forecast unlock goes too, but you can get it back any time with Restore and your checkout email." : ""}`)) return;
+      setProfiles(list.filter(x => x.key !== p.key)); setToken(p.key, null);
+    }
+  });
+  // backup: profiles + their unlock tokens, as a link (#backup=...) or a JSON file
+  const b64 = { enc: s => btoa(unescape(encodeURIComponent(s))).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, ""),
+                dec: s => decodeURIComponent(escape(atob(s.replace(/-/g, "+").replace(/_/g, "/")))) };
+  function backupData() {
+    const list = getProfiles(), tokens = getTokens(), t = {};
+    for (const p of list) if (tokens[p.key]) t[p.key] = tokens[p.key];
+    return { app: "manual-of-the-self", v: 1, profiles: list.map(clean), tokens: t };
+  }
+  function importData(data) {
+    if (!data || data.app !== "manual-of-the-self" || !Array.isArray(data.profiles)) throw new Error("bad");
+    const list = getProfiles(); let added = 0;
+    for (const raw of data.profiles) {
+      if (!raw || !/^\d{4}-\d{2}-\d{2}$/.test(raw.date) || !isFinite(raw.lat) || !isFinite(raw.lon) || !raw.tz) continue;
+      const p = clean(raw); p.key = E.chartKey(p); p.saved = new Date().toISOString().slice(0, 10);
+      if (!list.some(x => x.key === p.key)) { list.push(p); added++; }
+    }
+    setProfiles(list);
+    for (const [k, v] of Object.entries(data.tokens || {})) if (typeof v === "string" && !getTokens()[k]) setToken(k, v);
+    renderProfiles();
+    return added;
+  }
+  $("#profCopy").addEventListener("click", async () => {
+    const url = `${location.origin}${location.pathname}#backup=${b64.enc(JSON.stringify(backupData()))}`;
+    try { await navigator.clipboard.writeText(url); $("#profMsg").textContent = "Backup link copied. Open it on your other device."; }
+    catch (e) { prompt("Copy your backup link:", url); }
+  });
+  $("#profDownload").addEventListener("click", () => {
+    const a = document.createElement("a");
+    a.href = URL.createObjectURL(new Blob([JSON.stringify(backupData(), null, 2)], { type: "application/json" }));
+    a.download = `manual-of-the-self-profiles-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+    setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+  });
+  $("#profImport").addEventListener("change", async e => {
+    const f = e.target.files[0]; e.target.value = ""; if (!f) return;
+    try { const n = importData(JSON.parse(await f.text())); $("#profMsg").textContent = n ? `Added ${n} profile${n > 1 ? "s" : ""}.` : "Those profiles are already saved here."; }
+    catch (err) { $("#profMsg").textContent = "That file isn't a Manual of the Self backup."; }
+  });
+  function handleBackupLink() {
+    const m = location.hash.match(/^#backup=([\w-]+)$/); if (!m) return;
+    history.replaceState(null, "", location.pathname + location.search);
+    try {
+      const data = JSON.parse(b64.dec(m[1]));
+      const n = data.profiles ? data.profiles.length : 0;
+      if (!confirm(`Add ${n} saved profile${n === 1 ? "" : "s"} from your backup link to this browser?`)) return;
+      importData(data);
+    } catch (e) { alert("That backup link looks incomplete. Copy it again from your other device."); }
+  }
+
   // ---------- start ----------
   // Returning from Stripe Checkout: ?paid=<session id> or ?canceled=1
   async function handleReturn() {
@@ -543,6 +651,9 @@
   (async () => {
     let saved = null;
     try { saved = JSON.parse(localStorage.getItem(STORE) || "null"); } catch (e) {}
+    if (saved && saved.date && !saved.sample && !getProfiles().length) { try { if (resolve({ ...saved })) saveProfile(saved); } catch (e) {} }
+    handleBackupLink();
+    renderProfiles();
     const claimed = await handleReturn();
     const start = claimed || (saved && saved.date ? saved : { ...SAMPLE });
     fillForm(start); load(start);
