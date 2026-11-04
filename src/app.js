@@ -295,6 +295,25 @@
     try { const r = await fetch("/api/config"); config = r.ok ? await r.json() : { offline: true }; } catch (e) { config = { offline: true }; }
     return config;
   }
+  // Google Ads: load the tag only when the site has an Ads ID set, and report a purchase once per payment
+  let adsReady = null;
+  function ads(cfg) {
+    if (!cfg || !cfg.ads) return null;
+    if (!adsReady) {
+      window.dataLayer = window.dataLayer || [];
+      window.gtag = window.gtag || function () { window.dataLayer.push(arguments); };
+      window.gtag("js", new Date()); window.gtag("config", cfg.ads.id);
+      const s = document.createElement("script"); s.async = true;
+      s.src = "https://www.googletagmanager.com/gtag/js?id=" + encodeURIComponent(cfg.ads.id);
+      document.head.appendChild(s); adsReady = true;
+    }
+    return cfg.ads;
+  }
+  async function trackPurchase(data) {
+    const cfg = await getConfig(), a = ads(cfg); if (!a) return;
+    const cents = data && data.amount != null ? data.amount : cfg.price;
+    window.gtag("event", "conversion", { send_to: a.id + "/" + a.label, value: cents / 100, currency: "USD", transaction_id: (data && data.ref) || "" });
+  }
   const money = cents => `$${(cents / 100).toFixed(cents % 100 ? 2 : 0)}`;
   const priceText = c => money(c.price);
   // last day of the sale, in Pacific time ("Nov 30")
@@ -450,6 +469,7 @@
           setToken(E.chartKey(buying), r.data.token);
           try { localStorage.removeItem(PENDING); localStorage.setItem(STORE, JSON.stringify(buying)); } catch (e) {}
           notice("Thank you. Your full forecast is unlocked below.", true);
+          trackPurchase(r.data);
           loadForecast();
         } else $("#buyErr").textContent = r.data.error || "Couldn't confirm the PayPal payment. Refresh and use Restore with your PayPal email.";
       },
@@ -679,6 +699,7 @@
   }
 
   // ---------- start ----------
+  getConfig().then(ads).catch(() => {});   // Ads tag on landing, so a later purchase is credited to the ad click
   // Returning from Stripe Checkout: ?paid=<session id> or ?canceled=1
   async function handleReturn() {
     const q = new URLSearchParams(location.search), sid = q.get("paid");
@@ -694,6 +715,7 @@
         setToken(E.chartKey(pending), r.data.token);
         try { localStorage.removeItem(PENDING); localStorage.setItem(STORE, JSON.stringify(pending)); } catch (e) {}
         notice("Thank you. Your full forecast is unlocked below.", true);
+        trackPurchase(r.data);
       } else notice(r.data.error || "Couldn't confirm the payment. Refresh to try again.", false);
     } catch (e) { notice("Couldn't confirm the payment. Refresh to try again.", false); }
     return pending;
