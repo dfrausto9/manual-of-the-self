@@ -54,6 +54,12 @@ const PAYPAL = {
 };
 PAYPAL.on = !!(stripe && PAYPAL.id && PAYPAL.secret);   // Stripe keeps the purchase record, so PayPal needs it too
 PAYPAL.api = PAYPAL.live ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
+
+// Google Ads conversion tracking (optional): set GOOGLE_ADS_ID=AW-123456789 and GOOGLE_ADS_LABEL=abcDEF on Render.
+// Purchases are reported to Ads only when both are set; nothing about the buyer's chart is sent.
+const ADS = { id: (process.env.GOOGLE_ADS_ID || "").trim(), label: (process.env.GOOGLE_ADS_LABEL || "").trim() };
+ADS.on = /^AW-\d{6,15}$/.test(ADS.id) && /^[A-Za-z0-9_-]{4,64}$/.test(ADS.label);
+const SITE_URL = (process.env.SITE_URL || "https://manualoftheself.com").replace(/\/+$/, "");
 const PRODUCT = "full-forecast-v1";
 const PRODUCT_NAME = "Manual of the Self: Full Forecast";
 // Sample chart shown to new visitors (Chicago, 15 Jun 1995 09:20) — its full forecast is an open demo
@@ -111,7 +117,8 @@ setInterval(() => { const now = Date.now(); for (const hits of limiters) for (co
 app.get("/api/config", (req, res) => {
   res.json({ payments: !!stripe, testMode: TEST_MODE, price: priceNow(), regularPrice: PRICE_CENTS, currency: "usd", support: SUPPORT_EMAIL,
              paypal: PAYPAL.on ? { clientId: PAYPAL.id, sandbox: !PAYPAL.live } : null,
-             sale: saleOn() ? { name: SALE.name, endsAt: new Date(SALE.ends).toISOString() } : null });
+             sale: saleOn() ? { name: SALE.name, endsAt: new Date(SALE.ends).toISOString() } : null,
+             ads: ADS.on ? { id: ADS.id, label: ADS.label } : null });
 });
 
 // Free teaser: how much is in the forecast, without dates or details
@@ -169,7 +176,7 @@ app.post("/api/claim", limit(20), async (req, res) => {
     const key = ENGINE.chartKey(inp);
     if (!s.metadata || !safeEqual(s.metadata.chart_hash, chartHash(key)))
       return res.status(409).json({ error: "This purchase was for a different chart. Re-enter the birth details you bought it for." });
-    res.json({ token: tokenFor(key), email: s.customer_details?.email || null });
+    res.json({ token: tokenFor(key), email: s.customer_details?.email || null, amount: s.amount_total ?? null, ref: s.id });
   } catch (e) {
     console.error("claim failed:", e.message);
     res.status(502).json({ error: "Couldn't confirm the payment. Please refresh to try again." });
@@ -281,7 +288,7 @@ app.post("/api/paypal/capture", limit(20), async (req, res) => {
           });
       }
     } catch (e) { console.error("paypal record failed (buyer still unlocked):", e.message); }
-    res.json({ token: tokenFor(key), email });
+    res.json({ token: tokenFor(key), email, amount: Math.round(parseFloat(cap.amount.value) * 100) || null, ref: id });
   } catch (e) {
     console.error("paypal capture failed:", e.message);
     res.status(502).json({ error: "Couldn't confirm the PayPal payment. Please refresh and use Restore with your PayPal email." });
@@ -300,6 +307,11 @@ app.post("/api/forecast", limit(40), (req, res) => {
 });
 
 // ---------------- page ----------------
+// Search engines: one public page, the API stays out of the index
+app.get("/robots.txt", (req, res) => res.type("text/plain").send(`User-agent: *\nAllow: /\nDisallow: /api/\n\nSitemap: ${SITE_URL}/sitemap.xml\n`));
+app.get("/sitemap.xml", (req, res) => res.type("application/xml").send(
+  `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n  <url><loc>${SITE_URL}/</loc><changefreq>weekly</changefreq><priority>1.0</priority></url>\n</urlset>\n`));
+
 app.use(express.static(path.join(__dirname, "public"), { extensions: ["html"], maxAge: "10m" }));
 app.get("/healthz", (req, res) => res.send("ok"));
 
