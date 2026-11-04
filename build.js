@@ -22,8 +22,9 @@ const html = `<!doctype html>
 <meta property="og:type" content="website">
 <meta property="og:title" content="Manual of the Self">
 <meta property="og:description" content="Your birth chart as a manual of the self. Free chart reading, plus a personal forecast of the sky weather ahead.">
-<meta property="og:url" content="https://manual-of-the-self.onrender.com/">
-<meta property="og:image" content="https://manual-of-the-self.onrender.com/og.png">
+<link rel="canonical" href="https://manualoftheself.com/">
+<meta property="og:url" content="https://manualoftheself.com/">
+<meta property="og:image" content="https://manualoftheself.com/og.png">
 <meta property="og:image:width" content="1200"><meta property="og:image:height" content="630">
 <meta name="twitter:card" content="summary_large_image">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}</style>
