@@ -366,6 +366,7 @@
     const stamp = t ? `<div class="stamp"><b>${t.chapters}</b><span>chapters in your next 9 months · ${t.peaks} exact peak dates${t.eclipses ? ` · ${t.eclipses} eclipse${t.eclipses > 1 ? "s" : ""}` : ""}</span></div>` : "";
     const buy = cfg.payments
       ? `<button type="button" class="btn" id="buyBtn">Unlock my forecast · ${priceText(cfg)}</button>${cfg.testMode ? `<span class="fine">Test mode: no real charges. Use card 4242 4242 4242 4242, any future date, any CVC.</span>` : ""}`
+        + (cfg.paypal ? `</div><div class="paypal-row"><span class="fine">or pay with PayPal${cfg.paypal.sandbox ? " (sandbox: sign in with a PayPal sandbox buyer account)" : ""}</span><div id="paypalBtns"></div>` : "")
       : `<p class="fine">Purchases open soon. Meanwhile, look at the sample chart's full forecast to see what's included.</p>`;
     box.innerHTML = `
       <div class="peek" aria-hidden="true"><span class="lines"></span>${ghosts}${stamp}</div>
@@ -385,7 +386,7 @@
         <button type="button" class="linkbtn" id="seeSample" style="justify-self:start">See a full example on the sample chart</button>
         <p class="err" id="buyErr" role="alert"></p>
         ${cfg.payments ? `<div class="restore">
-          <span class="fine">Already bought it on another device? Enter the birth details you bought it for above, then the email you used at checkout.</span>
+          <span class="fine">Already bought it on another device? Enter the birth details you bought it for above, then the email you used at checkout (or your PayPal email).</span>
           <div class="row"><input id="restoreEmail" type="email" autocomplete="email" placeholder="you@example.com" aria-label="Checkout email"><button type="button" class="btn ghost" id="restoreBtn">Restore</button></div>
           <span id="restoreMsg" role="status"></span>
         </div>` : ""}
@@ -402,6 +403,7 @@
       } catch (e) { $("#buyErr").textContent = "Couldn't reach the server. Check your connection and try again."; }
       buyBtn.disabled = false;
     });
+    if (cfg.paypal && $("#paypalBtns")) renderPayPal(cfg, $("#paypalBtns"));
     const rb = $("#restoreBtn");
     if (rb) rb.addEventListener("click", async () => {
       const msg = $("#restoreMsg"); msg.className = ""; msg.textContent = "Checking…"; rb.disabled = true;
@@ -412,6 +414,48 @@
       } catch (e) { msg.className = "err"; msg.textContent = "Couldn't reach the server. Try again."; }
       rb.disabled = false;
     });
+  }
+
+  // PayPal: PayPal's own checkout window; the server creates the order and confirms the payment
+  let paypalSdk = null;
+  function loadPayPal(cfg) {
+    if (!paypalSdk) paypalSdk = new Promise((ok, fail) => {
+      const s = document.createElement("script");
+      s.src = "https://www.paypal.com/sdk/js?" + new URLSearchParams({ "client-id": cfg.paypal.clientId, currency: "USD", intent: "capture",
+        components: "buttons", "disable-funding": "card,credit,paylater" });
+      s.onload = () => (window.paypal ? ok(window.paypal) : fail(new Error("PayPal didn't load")));
+      s.onerror = () => { paypalSdk = null; fail(new Error("PayPal didn't load")); };
+      document.head.appendChild(s);
+    });
+    return paypalSdk;
+  }
+  async function renderPayPal(cfg, el) {
+    let pp;
+    try { pp = await loadPayPal(cfg); } catch (e) { el.innerHTML = `<span class="fine">PayPal couldn't load right now. Card checkout above still works.</span>`; return; }
+    if (!el.isConnected) return;
+    let buying = null;   // the chart being paid for, fixed when the PayPal window opens
+    pp.Buttons({
+      style: { layout: "horizontal", color: "gold", shape: "rect", label: "pay", height: 44, tagline: false },
+      createOrder: async () => {
+        $("#buyErr").textContent = "";
+        buying = { ...state.input };
+        try { localStorage.setItem(PENDING, JSON.stringify(buying)); } catch (e) {}
+        const r = await post("/api/paypal/order", { birth: birthOf(buying) });
+        if (!r.ok || !r.data.id) throw new Error(r.data.error || "Couldn't start PayPal. Please try again.");
+        return r.data.id;
+      },
+      onApprove: async data => {
+        const r = await post("/api/paypal/capture", { order_id: data.orderID, birth: birthOf(buying) });
+        if (r.ok) {
+          setToken(E.chartKey(buying), r.data.token);
+          try { localStorage.removeItem(PENDING); localStorage.setItem(STORE, JSON.stringify(buying)); } catch (e) {}
+          notice("Thank you. Your full forecast is unlocked below.", true);
+          loadForecast();
+        } else $("#buyErr").textContent = r.data.error || "Couldn't confirm the PayPal payment. Refresh and use Restore with your PayPal email.";
+      },
+      onCancel: () => { $("#buyErr").textContent = "PayPal canceled. Nothing was charged."; },
+      onError: err => { $("#buyErr").textContent = (err && err.message && !/^Error/.test(err.message) && err.message.length < 140) ? err.message : "PayPal hit a problem. Please try again, or use card checkout."; },
+    }).render(el).catch(() => {});
   }
 
   document.querySelectorAll(".seg button").forEach(b => b.addEventListener("click", () => {

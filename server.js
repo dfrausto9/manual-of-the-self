@@ -4,10 +4,12 @@
  * Free: the page itself (birth chart, manual, today's sky) is calculated in the visitor's browser.
  * Paid: the weather calendar is calculated here and only returned with a valid unlock token.
  *
- * Payments: Stripe Checkout, one-time. Stripe is the record of purchases, so no database is needed:
+ * Payments: Stripe Checkout or PayPal, one-time. Stripe is the record of purchases, so no database is needed:
  *   - each Checkout Session carries a chart_hash (an HMAC of the birth chart, not the birth data itself)
  *   - after payment, /api/claim checks the session with Stripe and issues an unlock token
- *   - /api/restore finds earlier paid sessions by email + chart, for a new device or cleared browser
+ *   - PayPal orders carry the same chart_hash as custom_id; /api/paypal/capture checks the order with PayPal,
+ *     records the purchase in Stripe as a customer (email + chart_hash) and issues the unlock token
+ *   - /api/restore finds earlier purchases (Stripe sessions or PayPal records) by email + chart
  *
  * Environment (Render > Environment):
  *   STRIPE_SECRET_KEY   sk_test_... while testing, sk_live_... to take real payments
@@ -17,6 +19,8 @@
  *   SALE_STARTS / SALE_ENDS  optional ISO times for the sale window (default: now until Dec 1 2026 00:00 Pacific)
  *   SALE_NAME           optional label shown on the site (default "Black Friday special")
  *   SUPPORT_EMAIL       optional; shown to buyers (default tarotrightnow@gmail.com)
+ *   PAYPAL_CLIENT_ID / PAYPAL_CLIENT_SECRET  optional; from a PayPal REST app. Both set = PayPal button shown
+ *   PAYPAL_ENV          "sandbox" (default) while testing, "live" for real payments
  *   PORT                set by Render
  */
 const path = require("path");
@@ -43,6 +47,15 @@ const saleOn = (now = Date.now()) => SALE.cents > 0 && SALE.cents < PRICE_CENTS 
 const priceNow = () => (saleOn() ? SALE.cents : PRICE_CENTS);
 const SUPPORT_EMAIL = (process.env.SUPPORT_EMAIL || "tarotrightnow@gmail.com").trim();
 const TEST_MODE = STRIPE_KEY.startsWith("sk_test_");
+const PAYPAL = {
+  id: (process.env.PAYPAL_CLIENT_ID || "").trim(),
+  secret: (process.env.PAYPAL_CLIENT_SECRET || "").trim(),
+  live: (process.env.PAYPAL_ENV || "").trim().toLowerCase() === "live",
+};
+PAYPAL.on = !!(stripe && PAYPAL.id && PAYPAL.secret);   // Stripe keeps the purchase record, so PayPal needs it too
+PAYPAL.api = PAYPAL.live ? "https://api-m.paypal.com" : "https://api-m.sandbox.paypal.com";
+const PRODUCT = "full-forecast-v1";
+const PRODUCT_NAME = "Manual of the Self: Full Forecast";
 // Sample chart shown to new visitors (Chicago, 15 Jun 1995 09:20) — its full forecast is an open demo
 const SAMPLE_KEY = ENGINE.chartKey({ date: "1995-06-15", time: "09:20", noTime: false, lat: 41.8781, lon: -87.6298, tz: "America/Chicago" });
 
@@ -97,6 +110,7 @@ setInterval(() => { const now = Date.now(); for (const hits of limiters) for (co
 // ---------------- API ----------------
 app.get("/api/config", (req, res) => {
   res.json({ payments: !!stripe, testMode: TEST_MODE, price: priceNow(), regularPrice: PRICE_CENTS, currency: "usd", support: SUPPORT_EMAIL,
+             paypal: PAYPAL.on ? { clientId: PAYPAL.id, sandbox: !PAYPAL.live } : null,
              sale: saleOn() ? { name: SALE.name, endsAt: new Date(SALE.ends).toISOString() } : null });
 });
 
@@ -126,11 +140,11 @@ app.post("/api/checkout", limit(10), async (req, res) => {
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
       line_items: [{ quantity: 1, price_data: { currency: "usd", unit_amount: priceNow(), product_data: {
-        name: "Manual of the Self: Full Forecast" + (saleOn() ? ` (${SALE.name})` : ""),
+        name: PRODUCT_NAME + (saleOn() ? ` (${SALE.name})` : ""),
         description: "Unlocks the weather calendar and chapters ahead for one birth chart. It updates every time you return.",
       } } }],
-      metadata: { chart_hash: chartHash(key), product: "full-forecast-v1" },
-      payment_intent_data: { metadata: { chart_hash: chartHash(key), product: "full-forecast-v1" } },
+      metadata: { chart_hash: chartHash(key), product: PRODUCT },
+      payment_intent_data: { metadata: { chart_hash: chartHash(key), product: PRODUCT } },
       allow_promotion_codes: true,
       custom_text: { submit: { message: `Delivered instantly on the Manual of the Self site. All sales are final. Questions or problems with your purchase: ${SUPPORT_EMAIL}` } },
       success_url: `${origin(req)}/?paid={CHECKOUT_SESSION_ID}`,
@@ -171,12 +185,106 @@ app.post("/api/restore", limit(10), async (req, res) => {
   const want = chartHash(ENGINE.chartKey(inp));
   try {
     const list = await stripe.checkout.sessions.list({ customer_details: { email }, status: "complete", limit: 100 });
-    const hit = list.data.find(s => s.payment_status === "paid" && s.metadata && safeEqual(s.metadata.chart_hash, want));
+    let hit = list.data.find(s => s.payment_status === "paid" && s.metadata && safeEqual(s.metadata.chart_hash, want));
+    if (!hit && PAYPAL.on) {
+      const people = await stripe.customers.list({ email, limit: 100 });
+      hit = people.data.find(c => c.metadata && c.metadata.source === "paypal" && safeEqual(c.metadata.chart_hash || "", want));
+    }
     if (!hit) return res.status(404).json({ error: "No purchase found for that email and these birth details." });
     res.json({ token: tokenFor(ENGINE.chartKey(inp)) });
   } catch (e) {
     console.error("restore failed:", e.message);
     res.status(502).json({ error: "Couldn't check purchases right now. Please try again." });
+  }
+});
+
+// ---------------- PayPal ----------------
+let ppAuth = { token: "", expires: 0 };
+async function paypalToken() {
+  if (ppAuth.token && Date.now() < ppAuth.expires) return ppAuth.token;
+  const r = await fetch(PAYPAL.api + "/v1/oauth2/token", {
+    method: "POST",
+    headers: { Authorization: "Basic " + Buffer.from(PAYPAL.id + ":" + PAYPAL.secret).toString("base64"),
+               "Content-Type": "application/x-www-form-urlencoded" },
+    body: "grant_type=client_credentials",
+  });
+  const d = await r.json().catch(() => ({}));
+  if (!r.ok || !d.access_token) throw new Error("PayPal sign-in failed (" + r.status + ")");
+  ppAuth = { token: d.access_token, expires: Date.now() + Math.max(60, (d.expires_in || 300) - 120) * 1000 };
+  return ppAuth.token;
+}
+async function paypal(method, url, body) {
+  const r = await fetch(PAYPAL.api + url, {
+    method,
+    headers: { Authorization: "Bearer " + (await paypalToken()), "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await r.json().catch(() => ({}));
+  return { ok: r.ok, status: r.status, data };
+}
+
+// Start a PayPal order for one chart (the price is set here, never by the browser)
+app.post("/api/paypal/order", limit(10), async (req, res) => {
+  if (!PAYPAL.on) return res.status(503).json({ error: "PayPal isn't set up yet." });
+  const { inp, error } = readBirth(req.body?.birth); if (error) return res.status(400).json({ error });
+  try {
+    const r = await paypal("POST", "/v2/checkout/orders", {
+      intent: "CAPTURE",
+      purchase_units: [{
+        custom_id: chartHash(ENGINE.chartKey(inp)),
+        description: (PRODUCT_NAME + (saleOn() ? ` (${SALE.name})` : "")).slice(0, 127),
+        amount: { currency_code: "USD", value: (priceNow() / 100).toFixed(2) },
+      }],
+      payment_source: { paypal: { experience_context: {
+        brand_name: "Manual of the Self", shipping_preference: "NO_SHIPPING", user_action: "PAY_NOW",
+      } } },
+    });
+    if (!r.ok || !r.data.id) throw new Error("create order " + r.status + " " + (r.data.name || ""));
+    res.json({ id: r.data.id });
+  } catch (e) {
+    console.error("paypal order failed:", e.message);
+    res.status(502).json({ error: "Couldn't start PayPal. Please try again." });
+  }
+});
+
+// After the buyer approves in PayPal: take the payment, check it, record it, issue the unlock token
+app.post("/api/paypal/capture", limit(20), async (req, res) => {
+  if (!PAYPAL.on) return res.status(503).json({ error: "PayPal isn't set up yet." });
+  const id = String(req.body?.order_id || "");
+  const { inp, error } = readBirth(req.body?.birth); if (error) return res.status(400).json({ error });
+  if (!/^[A-Z0-9]{10,30}$/.test(id)) return res.status(400).json({ error: "Invalid PayPal reference." });
+  try {
+    let r = await paypal("POST", `/v2/checkout/orders/${id}/capture`, {});
+    if (!r.ok && r.data?.details?.some(d => d.issue === "ORDER_ALREADY_CAPTURED")) r = await paypal("GET", `/v2/checkout/orders/${id}`);
+    if (!r.ok) {
+      const declined = r.data?.details?.some(d => d.issue === "INSTRUMENT_DECLINED");
+      console.error("paypal capture failed:", r.status, r.data?.name || "");
+      return res.status(402).json({ error: declined ? "PayPal declined that payment. Try another funding source in PayPal." : "This PayPal payment didn't complete." });
+    }
+    const unit = r.data.purchase_units?.[0] || {};
+    const cap = unit.payments?.captures?.[0];
+    if (r.data.status !== "COMPLETED" || !cap || cap.status !== "COMPLETED" || cap.amount?.currency_code !== "USD")
+      return res.status(402).json({ error: "This PayPal payment hasn't completed." });
+    const key = ENGINE.chartKey(inp), hash = chartHash(key);
+    if (!safeEqual(unit.custom_id || cap.custom_id || "", hash))
+      return res.status(409).json({ error: "This purchase was for a different chart. Re-enter the birth details you bought it for." });
+    const email = (r.data.payer?.email_address || "").toLowerCase() || null;
+    // Keep Stripe as the one record of purchases, so Restore works for PayPal buyers too
+    try {
+      if (email) {
+        const existing = await stripe.customers.list({ email, limit: 100 });
+        if (!existing.data.some(c => c.metadata?.paypal_order === id))
+          await stripe.customers.create({
+            email, name: [r.data.payer?.name?.given_name, r.data.payer?.name?.surname].filter(Boolean).join(" ") || undefined,
+            description: `PayPal purchase: ${PRODUCT_NAME} (${cap.amount.value} USD)`,
+            metadata: { source: "paypal", paypal_order: id, paypal_capture: cap.id || "", chart_hash: hash, product: PRODUCT },
+          });
+      }
+    } catch (e) { console.error("paypal record failed (buyer still unlocked):", e.message); }
+    res.json({ token: tokenFor(key), email });
+  } catch (e) {
+    console.error("paypal capture failed:", e.message);
+    res.status(502).json({ error: "Couldn't confirm the PayPal payment. Please refresh and use Restore with your PayPal email." });
   }
 });
 
@@ -197,6 +305,6 @@ app.get("/healthz", (req, res) => res.send("ok"));
 
 const PORT = process.env.PORT || 3000;
 if (require.main === module) {
-  app.listen(PORT, () => console.log(`Manual of the Self on :${PORT} | payments ${stripe ? (TEST_MODE ? "TEST mode" : "LIVE") : "off (no STRIPE_SECRET_KEY)"}`));
+  app.listen(PORT, () => console.log(`Manual of the Self on :${PORT} | payments ${stripe ? (TEST_MODE ? "TEST mode" : "LIVE") : "off (no STRIPE_SECRET_KEY)"} | PayPal ${PAYPAL.on ? (PAYPAL.live ? "LIVE" : "sandbox") : "off"}`));
 }
 module.exports = { app, tokenFor, chartHash };
