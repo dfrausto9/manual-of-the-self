@@ -30,6 +30,7 @@ const express = require("express");
 global.Astronomy = require("astronomy-engine");
 const ENGINE = require("./shared/engine.js");
 const forecast = require("./shared/forecast.js")(ENGINE, global.Astronomy);
+const DEPTH = require("./shared/depth.js");   // paid reading depth (server only)
 
 const STRIPE_KEY = (process.env.STRIPE_SECRET_KEY || "").trim();
 const stripe = STRIPE_KEY ? require("stripe")(STRIPE_KEY) : null;
@@ -96,7 +97,18 @@ function chartFrom(inp) {
 function forecastFor(c, months) {
   const start = new Date(); start.setUTCHours(0, 0, 0, 0);
   const cal = forecast.transitCalendar(c, start, months);
+  for (const e of cal.events) e.depth = DEPTH.depthFor(e, c, DEPTH.phaseOf(e, start));
   return { start, end: cal.end, events: cal.events, sky: forecast.skyEvents(c, start, cal.end) };
+}
+// Extra notes for today's transits: full for buyers, a teaser line for everyone else
+function nowNotes(c, full) {
+  const out = {}, now = new Date();
+  for (const t of ENGINE.currentTransits(c, now).slice(0, 6)) {
+    const ph = DEPTH.phaseOf(t, now);
+    const n = full ? DEPTH.depthFor(t, c, ph) : DEPTH.teaserFor(t, c, ph);
+    if (n) out[DEPTH.idOf(t)] = n;
+  }
+  return out;
 }
 const origin = req => `${req.headers["x-forwarded-proto"] || req.protocol}://${req.get("host")}`;
 
@@ -124,7 +136,7 @@ app.get("/api/config", (req, res) => {
 // Free teaser: how much is in the forecast, without dates or details
 app.post("/api/teaser", limit(40), (req, res) => {
   const { inp, error } = readBirth(req.body?.birth); if (error) return res.status(400).json({ error });
-  const f = forecastFor(chartFrom(inp), 9);
+  const c = chartFrom(inp), f = forecastFor(c, 9);
   const slow = ["pluto", "neptune", "uranus", "saturn", "jupiter"];
   const big = f.events.filter(e => slow.includes(e.transit));
   const W = { pluto: 5, neptune: 4, uranus: 4, saturn: 3, jupiter: 2 };
@@ -135,6 +147,7 @@ app.post("/api/teaser", limit(40), (req, res) => {
     peaks: f.events.reduce((n, e) => n + e.exacts.length, 0),
     eclipses: f.sky.filter(s => s.kind === "eclipse").length,
     headline: headline ? { transit: headline.transit, key: headline.key, natal: headline.natal } : null,
+    now: nowNotes(c, false),
   });
 });
 
@@ -303,7 +316,8 @@ app.post("/api/forecast", limit(40), (req, res) => {
   const isSample = req.body?.token === "sample" && key === SAMPLE_KEY;   // the sample chart's forecast is free to preview
   if (!isSample && !safeEqual(req.body?.token || "", tokenFor(key)))
     return res.status(403).json({ error: "locked" });
-  res.json(forecastFor(chartFrom(inp), months));
+  const c = chartFrom(inp);
+  res.json({ ...forecastFor(c, months), now: nowNotes(c, true) });
 });
 
 // ---------------- page ----------------

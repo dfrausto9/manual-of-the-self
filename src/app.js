@@ -264,17 +264,32 @@
   }
 
   // ---------- now ----------
-  function storyCard(e, dates) {
-    const st = L.transitStory(e, state.chart);
+  // Paid depth (from the server) under the story: where you are in it, what it asks, what to watch for
+  const ul = a => `<ul>${a.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
+  function depthHtml(d) {
+    return `${d.asking.length ? `<span class="prep">What it's asking of you</span>${ul(d.asking)}` : ""}${d.question ? `<p class="q">“${esc(d.question)}”</p>` : ""}
+      ${d.watch.length ? `<span class="prep">Keep an eye out for</span>${ul(d.watch)}` : ""}`;
+  }
+  // Free teaser: one real line, the rest is a blurred placeholder (no paid text is sent to the browser)
+  function teaserHtml(t) {
+    return `<span class="prep">Keep an eye out for</span><ul><li>${esc(t.line)}</li></ul>
+      <div class="depth-lock"><div class="blur" aria-hidden="true"><ul><li>Notes on what this transit is asking of you</li><li>More situations to keep an eye out for</li></ul><p>Where you are in it right now, and a question to sit with</p></div>
+      <div class="lockmsg"><span class="pill accent">+${t.more} more notes</span><span>What this asks of you, what to watch for and where you are in it, in your full forecast.</span><a href="#locked" class="btn sm" style="text-decoration:none">Unlock my forecast</a></div></div>`;
+  }
+  function storyCard(e, dates, extra) {
+    const st = L.transitStory(e, state.chart), d = extra && extra.prepare ? extra : null, t = extra && extra.line ? extra : null;
     return `<article class="card"><div class="ttl"><h3><span class="glyph">${P[e.transit].glyph}</span> ${P[e.transit].name} ${e.key} your ${P[e.natal].name}</h3><span class="pill ${st.tone}">${TONE_LABEL[st.tone]}</span></div>
       <div class="meta">${dates}</div>
       <div class="story">${st.lines.map(l => `<p>${esc(l)}</p>`).join("")}</div>
-      <span class="prep">How to prepare</span><ul>${st.prep.map(x => `<li>${esc(x)}</li>`).join("")}</ul></article>`;
+      ${d && d.now ? `<span class="prep">Right now</span><p class="now">${esc(d.now)}</p>` : ""}
+      <span class="prep">How to prepare</span>${ul(d ? d.prepare : st.prep)}
+      ${d ? depthHtml(d) : t ? teaserHtml(t) : ""}</article>`;
   }
+  const idOf = e => `${e.transit}|${e.key}|${e.natal}`;
   function renderNow() {
     const list = E.currentTransits(state.chart, state.now).slice(0, 6);
     $("#nowSub").textContent = `${fmtY(state.now)}. The strongest angles the sky is making to your chart today, slow planets first.`;
-    $("#now").innerHTML = list.length ? list.map(t => storyCard(t, `orb ${t.orb.toFixed(1)}° · ${t.applying ? "building" : "easing"}${t.retro ? " · retrograde" : ""} · lasts ${L.TRANSIT[t.transit].pace}`)).join("")
+    $("#now").innerHTML = list.length ? list.map(t => storyCard(t, `orb ${t.orb.toFixed(1)}° · ${t.applying ? "building" : "easing"}${t.retro ? " · retrograde" : ""} · lasts ${L.TRANSIT[t.transit].pace}`, (state.nowNotes || {})[idOf(t)])).join("")
       : `<p class="empty">A quiet sky for you today: no major angles to your chart.</p>`;
   }
 
@@ -342,11 +357,13 @@
     const inp = state.input, key = E.chartKey(inp), mine = ++seq;
     const token = inp.sample ? "sample" : getTokens()[key];
     state.selectedEvent = null; $("#tlDetail").innerHTML = "";
+    if (state.nowNotes) { state.nowNotes = null; renderNow(); }
     if (token) {
       try {
         const r = await post("/api/forecast", { birth: birthOf(inp), months: state.months, token });
         if (mine !== seq) return;
         if (r.ok) {
+          state.nowNotes = r.data.now || null; renderNow();
           hydrate(r.data); showPaid(true); renderPaidNote(); renderTimeline(); renderChapters(); return;
         }
         if (r.status === 403 && !inp.sample) setToken(key, null);
@@ -376,6 +393,7 @@
     let t = null;
     try { const r = await post("/api/teaser", { birth: birthOf(state.input) }); if (r.ok) t = r.data; } catch (e) {}
     if (mine !== seq) return;
+    if (t && t.now) { state.nowNotes = t.now; renderNow(); }
     // decorative, blurred stand-in for the timeline (no real dates)
     let ghosts = "", rnd = 7;
     const tones = ["flow", "friction", "blend"];
@@ -534,7 +552,7 @@
     $("#timeline").innerHTML = h;
     $("#timeline").querySelectorAll(".tl-bar[data-i]").forEach(b => b.addEventListener("click", () => {
       state.selectedEvent = ids[+b.dataset.i]; renderTimeline();
-      $("#tlDetail").innerHTML = storyCard(state.selectedEvent, evDates(state.selectedEvent));
+      $("#tlDetail").innerHTML = storyCard(state.selectedEvent, evDates(state.selectedEvent), state.selectedEvent.depth);
     }));
   }
 
@@ -549,7 +567,9 @@
         const st = L.transitStory(e, state.chart);
         return `<div class="chapter"><div class="when">${esc(evDates(e))}</div><div class="body">
           <h3><span class="glyph">${P[e.transit].glyph}</span>${esc(evTitle(e))} <span class="pill ${st.tone}">${TONE_LABEL[st.tone]}</span></h3>
-          ${st.lines.map(l => `<p>${esc(l)}</p>`).join("")}<p><strong>Prepare:</strong> ${esc(st.prep.join(" "))}</p></div></div>`;
+          ${st.lines.map(l => `<p>${esc(l)}</p>`).join("")}<p><strong>Prepare:</strong> ${esc((e.depth ? e.depth.prepare : st.prep).join(" "))}</p>
+          ${e.depth && e.depth.watch.length ? `<p><strong>Keep an eye out for:</strong> ${esc(e.depth.watch.map((w, i) => i ? w[0].toLowerCase() + w.slice(1) : w).join("; "))}.</p>` : ""}
+          ${e.depth && e.depth.question ? `<p class="q">“${esc(e.depth.question)}”</p>` : ""}</div></div>`;
       }
       if (s.kind === "retro") return `<div class="chapter"><div class="when">${s.startedBefore ? "already active" : fmt(s.start)} → ${fmt(s.end)}</div><div class="body">
         <h3><span class="glyph">${P[s.planet].glyph}</span>${P[s.planet].name} retrograde <span class="pill">review</span></h3>
