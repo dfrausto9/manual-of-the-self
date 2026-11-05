@@ -5,30 +5,29 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Marcellus&family=Figtree:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&family=Noto+Sans+Symbols:wght@500&family=Noto+Sans+Symbols+2&display=swap">
 <style>
 /* Layout: an observatory almanac. Instrument (the wheel) beside its reading, then the forecast calendar, then the manual. */
+/* Navy almanac palette for everyone: the page column is navy, set in front of a fixed celestial sky. */
 :root {
-  --bg: #eceef4; --surface: #f8f9fc; --sunken: #e2e5ee; --ink: #1b1e32; --muted: #5b6080; --line: #d3d7e3;
-  --accent: #85561a; --accent-soft: #f1e6d2;
-  --flow: #23786e; --flow-soft: #d8ece8; --friction: #ad3f39; --friction-soft: #f3dcd9; --blend: #5e4ba1; --blend-soft: #e3def3;
+  --bg: #131c3a; --surface: #19234a; --sunken: #0f1731; --ink: #ece8f4; --muted: #a3aac8; --line: #2c3762;
+  --accent: #d9b26b; --accent-soft: #3a3020;
+  --flow: #5cc2b3; --flow-soft: #17302d; --friction: #e47c71; --friction-soft: #3a1f1d; --blend: #a896e3; --blend-soft: #29233f;
+  --sky: #060b1c;
+  color-scheme: dark;
   --display: "Marcellus", "Trajan Pro", Georgia, serif;
   --body: "Figtree", "Segoe UI", system-ui, sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, Menlo, monospace;
   --glyph: "Noto Sans Symbols 2", "Noto Sans Symbols", "Segoe UI Symbol", "Apple Symbols", sans-serif;
   --radius: 10px;
 }
-@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
-  --bg: #0f111b; --surface: #161927; --sunken: #1d2133; --ink: #e7e5f0; --muted: #9a9db6; --line: #2a2e45;
-  --accent: #d9b26b; --accent-soft: #3a3020;
-  --flow: #5cc2b3; --flow-soft: #17302d; --friction: #e47c71; --friction-soft: #3a1f1d; --blend: #a896e3; --blend-soft: #29233f;
-  color-scheme: dark; } }
-:root[data-theme="dark"] {
-  --bg: #0f111b; --surface: #161927; --sunken: #1d2133; --ink: #e7e5f0; --muted: #9a9db6; --line: #2a2e45;
-  --accent: #d9b26b; --accent-soft: #3a3020;
-  --flow: #5cc2b3; --flow-soft: #17302d; --friction: #e47c71; --friction-soft: #3a1f1d; --blend: #a896e3; --blend-soft: #29233f;
-  color-scheme: dark; }
 
 * { box-sizing: border-box; }
 [hidden] { display: none !important; }
 body { background: var(--bg); color: var(--ink); font-family: var(--body); font-size: 15px; line-height: 1.55; }
+/* Celestial side borders: a still sky behind the navy column, shown only when there is room beside it. */
+@media (min-width: 1240px) {
+  body { background: var(--sky); }
+  body::before { content: ""; position: fixed; inset: 0; z-index: -1; background: var(--sky) url("/celestial-sides.webp") center / cover no-repeat; }
+  .wrap { background: var(--bg); min-height: 100vh; box-shadow: 0 0 0 1px rgba(201, 162, 74, 0.3); padding-left: 32px !important; padding-right: 32px !important; }
+}
 .wrap { max-width: 1180px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 28px 56px; display: grid; gap: 40px; }
 .wrap > *, section, .instrument > *, header.top > * { min-width: 0; }
 h1, h2, h3 { font-family: var(--display); font-weight: 400; text-wrap: balance; margin: 0; letter-spacing: .01em; }

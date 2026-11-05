@@ -18,7 +18,7 @@ const html = `<!doctype html>
 <meta name="description" content="Your birth chart read as a manual of the self, with a dated forecast of the sky weather moving through it.">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon-32.png">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
-<meta name="theme-color" content="#1b1e32">
+<meta name="theme-color" content="#131c3a">
 <meta property="og:type" content="website">
 <meta property="og:title" content="Manual of the Self">
 <meta property="og:description" content="Your birth chart as a manual of the self. Free chart reading, plus a personal forecast of the sky weather ahead.">
