@@ -45,8 +45,14 @@ const LIB = (() => {
   // How long each transiting planet's contacts tend to last, and how to work with them
   const TRANSIT = {
     sun:     { pace: "a few days", flow: ["Good days to be seen and take the lead."], friction: ["Pace yourself; ego clashes run hotter."], blend: ["Recharge and set intentions."] },
-    mercury: { pace: "a few days", flow: ["Have the conversation, send the pitch."], friction: ["Double-check details and tone."], blend: ["Write things down; ideas arrive fast."] },
-    venus:   { pace: "a few days", flow: ["Reach out, create, enjoy yourself."], friction: ["Watch overspending and people-pleasing."], blend: ["Spend time on what you love."] },
+    mercury: { pace: "a few days",
+      flow: ["Your words land well now. Have the conversation, send the pitch, ask the question.","Ideas connect easily; write them down before they move on.","A good few days for learning, planning and sorting out paperwork."],
+      friction: ["Words travel faster than meaning right now. Reread before you send, and ask before you assume.","Double-check dates, details and directions; small slips are the main risk.","If a conversation heats up, pause it. It will go better tomorrow than in the moment."],
+      blend: ["Your mind is switched on. Capture ideas as they arrive; some are worth keeping.","Notice what you keep thinking about. It is pointing at something.","Say the thing you have been rehearsing, kindly and clearly."] },
+    venus: { pace: "a few days",
+      flow: ["Warmth comes easily now. Reach out, make plans, enjoy someone's company.","A good few days to create, decorate, or treat yourself to something that lasts.","Compliments and kindness come back to you; offer them freely."],
+      friction: ["Wants and values may pull in different directions. Pause before you buy, promise or give in.","Small tensions in love or friendship surface. Name them gently rather than smoothing them over.","Notice people-pleasing; being liked is not the same as being valued."],
+      blend: ["Your heart is switched on. Notice what and who you are drawn to.","Spend time on what you love, not just what you have to do.","Pleasure is a form of rest; make room for it."] },
     mars: { pace: "days to a few weeks",
       flow: ["Start the hard task now; motivation is high.","Exercise or physical work channels the energy well.","Stand up for yourself clearly and calmly."],
       friction: ["Expect impatience and conflict; pause before you react.","Move your body before you send the angry message.","Drive and handle tools with extra care."],
