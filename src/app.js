@@ -632,7 +632,7 @@
         <div class="maya-glyph" role="img" aria-label="The number ${day.number} in Maya bar-and-dot numerals">${mayaNumeral(day.number)}</div>
         <div class="maya-body">
           <div class="maya-ttl"><span class="maya-name">${day.number} ${esc(sign.name)}</span><span class="mono">Day ${day.kin} of 260 · K'iche' name ${esc(sign.kiche)}</span></div>
-          <div class="chips"><span class="pill accent">Sign ${day.sign} of 20 · ${esc(sign.meaning)}</span><span class="pill">Number ${day.number} of 13 · ${num.strength} · ${esc(num.theme)}</span></div>
+          <div class="chips"><span class="pill accent">${esc(sign.themes)}</span><span class="pill">Number ${day.number} of 13 · ${num.strength}</span></div>
           <p>${esc(sign.reading)}</p>
           <p>${esc(num.line)}</p>
           <p class="note"><strong>Keep an eye out.</strong> ${esc(sign.watch)}</p>
@@ -649,7 +649,7 @@
           <p>Each day the number moves up one, from 1 to 13, and the sign moves on one, through 20 signs. The same pairing returns every 260 days, so your Maya birthday comes round more often than your calendar one. The trecena is the 13-day week that began on number 1 before you were born. The Haab' is the solar year: 18 months of 20 days plus 5 closing days. The Long Count numbers the days from a starting point in 3114 BCE.</p>
         </details>
       </div>
-      <p class="maya-src">Read from the traditional count still kept by daykeepers in highland Guatemala. The sign meanings follow that shared tradition; the reflections are this site's own. Offered as a tool for reflection and planning.</p>`;
+      <p class="maya-src">Source: the day readings follow the teaching of K'iche' daykeepers in Momostenango, Guatemala, as recorded by Barbara Tedlock in <cite>Time and the Highland Maya</cite> (revised edition, University of New Mexico Press, 1992). Daykeepers read a day through its rituals, not by translating its name, and no day is simply good or bad. The "you tend to" wording is this site's own. Offered as a tool for reflection and planning.</p>`;
   }
 
   $("#gloss").innerHTML = L.GLOSSARY.map(([t, d]) => `<div><dt>${t}</dt><dd>${esc(d)}</dd></div>`).join("");

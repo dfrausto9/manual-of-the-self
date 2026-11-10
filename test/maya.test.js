@@ -64,6 +64,7 @@ test("days until the next Kimi day and the next 10 Kimi, counted from Nov 10, 20
 test("every sign and number has its copy", () => {
   assert.equal(M.SIGNS.length, 20);
   assert.equal(M.NUMBERS.length, 13);
-  for (const s of M.SIGNS) for (const k of ["name", "kiche", "meaning", "reading", "watch"]) assert.ok(s[k], `${s.name} ${k}`);
-  for (const n of M.NUMBERS) for (const k of ["strength", "theme", "line"]) assert.ok(n[k]);
+  for (const s of M.SIGNS) for (const k of ["name", "kiche", "themes", "reading", "watch"]) assert.ok(s[k], `${s.name} ${k}`);
+  for (const n of M.NUMBERS) for (const k of ["strength", "line"]) assert.ok(n[k]);
+  assert.deepEqual(M.NUMBERS.map(n => n.strength), ["gentle", "gentle", "gentle", "moderate", "moderate", "moderate", "measured", "measured", "measured", "strong", "strong", "strong", "strong"]);
 });
