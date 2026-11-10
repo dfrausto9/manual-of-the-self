@@ -3,7 +3,7 @@
 const fs = require("fs");
 const path = require("path");
 const read = f => fs.readFileSync(path.join(__dirname, f), "utf8");
-const libs = ["shared/cities.js", "shared/engine.js", "shared/interp.js"].map(read).join("\n");
+const libs = ["shared/cities.js", "shared/engine.js", "shared/interp.js", "shared/maya.js"].map(read).join("\n");
 let page = read("src/template.html").replace("/*__LIBS__*/", () => libs).replace("/*__APP__*/", () => read("src/app.js"));
 // serve the astronomy library from our own site instead of a CDN
 page = page.replace(/<script src="https:\/\/cdn\.jsdelivr\.net\/npm\/astronomy-engine@[^"]+"><\/script>/, '<script src="/vendor/astronomy.browser.min.js"></script>');
