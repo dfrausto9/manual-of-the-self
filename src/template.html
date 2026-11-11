@@ -108,7 +108,9 @@ section > .head .sub { color: var(--muted); max-width: 62ch; font-size: 14.5px; 
 /* your Maya day */
 .maya { display: grid; gap: 18px; }
 .maya-card { display: flex; gap: 20px; padding: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
-.maya-glyph { flex: none; width: 132px; height: 132px; display: grid; place-items: center; background: var(--sunken); border-radius: 8px; color: var(--accent); }
+.maya-glyph { flex: none; width: 196px; display: grid; gap: 8px; justify-items: center; align-content: start; align-self: start; padding: 8px 8px 10px; background: var(--sunken); border-radius: 8px; color: var(--accent); }
+.maya-glyph img { display: block; width: 100%; height: auto; border-radius: 5px; }
+.maya-glyph span { display: grid; } .maya-glyph svg { width: 44px; height: 44px; }
 .maya-body { flex: 1; min-width: 0; display: grid; gap: 8px; align-content: start; }
 .maya-ttl { display: flex; align-items: baseline; justify-content: space-between; gap: 6px 12px; flex-wrap: wrap; }
 .maya-name { font-family: var(--display); font-size: 34px; line-height: 1.1; letter-spacing: .01em; }
@@ -124,7 +126,7 @@ section > .head .sub { color: var(--muted); max-width: 62ch; font-size: 14.5px; 
 .maya-src cite, footer cite { font-style: italic; }
 @media (max-width: 640px) {
   .maya-card { flex-direction: column; gap: 14px; padding: 14px 16px; }
-  .maya-glyph { width: 84px; height: 84px; } .maya-glyph svg { width: 60px; height: 60px; }
+  .maya-glyph { width: 100%; max-width: 232px; }
   .maya-name { font-size: 30px; }
   .maya-stats { grid-template-columns: 1fr; }
 }

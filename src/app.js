@@ -637,6 +637,7 @@
 
   // ---------- your Maya day ----------
   // The Maya day of the birth date (the calendar date at the birthplace). Needs no birth time or place.
+  const MAYA_ART = ["imix", "ik", "akbal", "kan", "chikchan", "kimi", "manik", "lamat", "muluk", "ok", "chuwen", "eb", "ben", "ix", "men", "kib", "kaban", "etznab", "kawak", "ajaw"];   // static/maya-<name>.jpg, in sign order
   function mayaNumeral(n) {
     // Maya numerals: a dot is one, a bar is five; dots sit above the bars
     const dots = n % 5, bars = Math.floor(n / 5), rows = (dots ? 1 : 0) + bars;
@@ -655,7 +656,8 @@
     const big = (k, v, sub) => `<div class="big"><span class="k">${k}</span><span class="v">${esc(v)}</span><span class="s">${sub}</span></div>`;
     $("#maya").innerHTML =
       `<div class="maya-card">
-        <div class="maya-glyph" role="img" aria-label="The number ${day.number} in Maya bar-and-dot numerals">${mayaNumeral(day.number)}</div>
+        <div class="maya-glyph"><img src="/maya-${MAYA_ART[day.sign - 1]}.jpg" alt="Illustration for the day ${esc(sign.name)}" width="232" height="128">
+          <span role="img" aria-label="The number ${day.number} in Maya bar-and-dot numerals">${mayaNumeral(day.number)}</span></div>
         <div class="maya-body">
           <div class="maya-ttl"><span class="maya-name">${day.number} ${esc(sign.name)}</span><span class="mono">Day ${day.kin} of 260 · K'iche' name ${esc(sign.kiche)}</span></div>
           <div class="chips"><span class="pill accent">${esc(sign.themes)}</span><span class="pill">Number ${day.number} of 13 · ${num.strength}</span></div>
@@ -675,7 +677,7 @@
           <p>Each day the number moves up one, from 1 to 13, and the sign moves on one, through 20 signs. The same pairing returns every 260 days, so your Maya birthday comes round more often than your calendar one. The trecena is the 13-day week that began on number 1 before you were born. The Haab' is the solar year: 18 months of 20 days plus 5 closing days. The Long Count numbers the days from a starting point in 3114 BCE.</p>
         </details>
       </div>
-      <p class="maya-src">Source: the day readings follow the teaching of K'iche' daykeepers in Momostenango, Guatemala, as recorded by Barbara Tedlock in <cite>Time and the Highland Maya</cite> (revised edition, University of New Mexico Press, 1992). Sayings from Chichicastenango are as given in Kenneth Johnson, <cite>Jaguar Wisdom</cite> (Llewellyn, 1997). Daykeepers read a day through its rituals, not by translating its name. No day is simply good or bad: each names its difficulty so that it can be met, and each has its own rites for setting things right. The "you tend to" wording is this site's own. Offered as a tool for reflection and planning.</p>`;
+      <p class="maya-src">Source: the day readings follow the teaching of K'iche' daykeepers in Momostenango, Guatemala, as recorded by Barbara Tedlock in <cite>Time and the Highland Maya</cite> (revised edition, University of New Mexico Press, 1992). Sayings from Chichicastenango are as given in Kenneth Johnson, <cite>Jaguar Wisdom</cite> (Llewellyn, 1997). Daykeepers read a day through its rituals, not by translating its name. The picture illustrates the traditional Yucatec day name. No day is simply good or bad: each names its difficulty so that it can be met, and each has its own rites for setting things right. The "you tend to" wording is this site's own. Offered as a tool for reflection and planning.</p>`;
   }
 
   $("#gloss").innerHTML = L.GLOSSARY.map(([t, d]) => `<div><dt>${t}</dt><dd>${esc(d)}</dd></div>`).join("");
