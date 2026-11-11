@@ -128,7 +128,7 @@
     $("#banner").innerHTML = inp.sample
       ? `<span class="pill accent">Sample chart</span><span>Born ${esc(when)} in ${esc(inp.label)}. Enter your own birth details above to read your chart.</span>`
       : `<span class="pill accent">${esc(inp.name || "Your chart")}</span><span>Born ${esc(when)} in ${esc(inp.label)}${c.timeKnown ? "" : " · birth time unknown, so houses and the Ascendant are left out"}.</span>`;
-    renderOverview(); renderWheel(); renderReading(); renderNow(); renderManual(); renderAspects(); loadForecast();
+    renderOverview(); renderWheel(); renderReading(); renderNow(); renderManual(); renderAspects(); renderMaya(); loadForecast();
   }
 
   function renderOverview() {
@@ -609,6 +609,49 @@
     $("#aspects").innerHTML = a.map(x => `<div class="asp"><div class="pair"><span>${P[x.a].glyph}</span><span style="color:var(--${x.tone})">${x.glyph}</span><span>${P[x.b].glyph}</span><span class="pill ${x.tone}" style="font-family:var(--body)">${x.key}</span></div>
       <div><strong>${P[x.a].name} ${x.key} ${P[x.b].name}</strong> <span class="mono" style="color:var(--muted); font-size:12.5px">orb ${x.orb.toFixed(1)}°</span><br>${esc(L.natalAspect(x))}</div></div>`).join("");
   }
+  // ---------- your Maya day ----------
+  // The Maya day of the birth date (the calendar date at the birthplace). Needs no birth time or place.
+  function mayaNumeral(n) {
+    // Maya numerals: a dot is one, a bar is five; dots sit above the bars
+    const dots = n % 5, bars = Math.floor(n / 5), rows = (dots ? 1 : 0) + bars;
+    const h = (dots ? 14 : 0) + bars * 12 + (rows - 1) * 8;
+    let y = (96 - h) / 2, out = "";
+    if (dots) { const x0 = 48 - (dots - 1) * 10; for (let i = 0; i < dots; i++) out += `<circle cx="${x0 + i * 20}" cy="${y + 7}" r="7"/>`; y += 22; }
+    for (let i = 0; i < bars; i++) { out += `<rect x="14" y="${y}" width="68" height="12" rx="4"/>`; y += 20; }
+    return `<svg width="96" height="96" viewBox="0 0 96 96" fill="currentColor" aria-hidden="true">${out}</svg>`;
+  }
+  function renderMaya() {
+    const [y, m, d] = state.input.date.split("-").map(Number);
+    const day = MAYA.day(y, m, d), sign = MAYA.SIGNS[day.sign - 1], num = MAYA.NUMBERS[day.number - 1];
+    const trecena = MAYA.SIGNS[day.trecena.sign - 1];
+    const t = state.now, until = MAYA.daysUntil(t.getFullYear(), t.getMonth() + 1, t.getDate(), day.number, day.sign);
+    const ahead = n => fmtY(new Date(t.getFullYear(), t.getMonth(), t.getDate() + n));
+    const big = (k, v, sub) => `<div class="big"><span class="k">${k}</span><span class="v">${esc(v)}</span><span class="s">${sub}</span></div>`;
+    $("#maya").innerHTML =
+      `<div class="maya-card">
+        <div class="maya-glyph" role="img" aria-label="The number ${day.number} in Maya bar-and-dot numerals">${mayaNumeral(day.number)}</div>
+        <div class="maya-body">
+          <div class="maya-ttl"><span class="maya-name">${day.number} ${esc(sign.name)}</span><span class="mono">Day ${day.kin} of 260 · K'iche' name ${esc(sign.kiche)}</span></div>
+          <div class="chips"><span class="pill accent">${esc(sign.themes)}</span><span class="pill">Number ${day.number} of 13 · ${num.strength}</span></div>
+          <p>${esc(sign.reading)}</p>
+          <p>${esc(num.line)}</p>
+          <p class="note"><strong>Keep an eye out.</strong> ${esc(sign.watch)}</p>
+        </div>
+      </div>
+      <div class="maya-stats">` +
+        big("Trecena", `1 ${trecena.name}`, "The 13-day week you were born in") +
+        big("Haab'", `${day.haab.day} ${day.haab.name}`, "Your place in the 365-day year") +
+        big("Long Count", day.longCountText, "Days since the Maya creation date") +
+      `</div>
+      <div class="maya-foot">
+        <div class="mono"><span>Next ${esc(sign.name)} day · ${ahead(until.sign)}</span><span>Your next ${day.number} ${esc(sign.name)} · ${ahead(until.day)}</span></div>
+        <details class="maya-how"><summary>How the Maya count works</summary>
+          <p>Each day the number moves up one, from 1 to 13, and the sign moves on one, through 20 signs. The same pairing returns every 260 days, so your Maya birthday comes round more often than your calendar one. The trecena is the 13-day week that began on number 1 before you were born. The Haab' is the solar year: 18 months of 20 days plus 5 closing days. The Long Count numbers the days from a starting point in 3114 BCE.</p>
+        </details>
+      </div>
+      <p class="maya-src">Source: the day readings follow the teaching of K'iche' daykeepers in Momostenango, Guatemala, as recorded by Barbara Tedlock in <cite>Time and the Highland Maya</cite> (revised edition, University of New Mexico Press, 1992). Sayings from Chichicastenango are as given in Kenneth Johnson, <cite>Jaguar Wisdom</cite> (Llewellyn, 1997). Daykeepers read a day through its rituals, not by translating its name. No day is simply good or bad: each names its difficulty so that it can be met, and each has its own rites for setting things right. The "you tend to" wording is this site's own. Offered as a tool for reflection and planning.</p>`;
+  }
+
   $("#gloss").innerHTML = L.GLOSSARY.map(([t, d]) => `<div><dt>${t}</dt><dd>${esc(d)}</dd></div>`).join("");
 
 

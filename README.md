@@ -2,7 +2,7 @@
 
 Your birth chart read as a manual of the self, plus a dated forecast of the "sky weather" moving through it.
 
-- **Free:** how-to-read guide, big three, interactive chart wheel, the manual (every planet), inner aspects, today's sky weather. Calculated in the visitor's browser.
+- **Free:** how-to-read guide, big three, interactive chart wheel, the manual (every planet), inner aspects, today's sky weather, your Maya day. Calculated in the visitor's browser.
 - **Paid ($9 one time, per chart):** weather calendar and chapters ahead for 3, 6 or 9 months. Calculated on the server and only returned with an unlock token.
 - The sample chart's full forecast is open as a demo.
 
@@ -23,6 +23,6 @@ Stripe Checkout (cards, wallets) plus an optional PayPal button, no database. Ea
 PayPal buyers pay in PayPal's own window. The server creates the order (price set on the server), captures it, checks it was for this chart, then records it in Stripe as a customer (email + `chart_hash`, `source: paypal`), so Restore works for PayPal buyers too. PayPal money lands in the PayPal account, not in Stripe payouts. Stripe promo codes only apply to card checkout.
 
 ## Project layout
-- `shared/engine.js` chart maths (browser + server) · `shared/forecast.js` transit calendar (server only) · `shared/interp.js` interpretations · `shared/cities.js` places
+- `shared/engine.js` chart maths (browser + server) · `shared/forecast.js` transit calendar (server only) · `shared/interp.js` interpretations · `shared/maya.js` Maya day count and its copy (`npm test` checks it against known dates) · `shared/cities.js` places
 - `src/template.html`, `src/app.js` the page · `build.js` assembles `public/index.html`
 - `server.js` Express server and API

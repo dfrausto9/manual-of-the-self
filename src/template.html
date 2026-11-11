@@ -105,6 +105,30 @@ label.f input, label.f select, .combo input { width: 100%; min-width: 0; backgro
 section > .head { display: flex; justify-content: space-between; align-items: end; gap: 16px; flex-wrap: wrap; margin-bottom: 14px; }
 section > .head .sub { color: var(--muted); max-width: 62ch; font-size: 14.5px; }
 
+/* your Maya day */
+.maya { display: grid; gap: 18px; }
+.maya-card { display: flex; gap: 20px; padding: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
+.maya-glyph { flex: none; width: 132px; height: 132px; display: grid; place-items: center; background: var(--sunken); border-radius: 8px; color: var(--accent); }
+.maya-body { flex: 1; min-width: 0; display: grid; gap: 8px; align-content: start; }
+.maya-ttl { display: flex; align-items: baseline; justify-content: space-between; gap: 6px 12px; flex-wrap: wrap; }
+.maya-name { font-family: var(--display); font-size: 34px; line-height: 1.1; letter-spacing: .01em; }
+.maya-ttl .mono { font-size: 12.5px; color: var(--muted); }
+.maya-body p { font-size: 14.5px; max-width: 70ch; }
+.maya-stats { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 14px; }
+.maya-foot { display: flex; align-items: start; justify-content: space-between; gap: 12px 24px; flex-wrap: wrap; padding-top: 14px; border-top: 1px solid var(--line); }
+.maya-foot .mono { display: grid; gap: 4px; font-size: 12.5px; color: var(--muted); }
+.maya-how { flex: 1 1 320px; max-width: 62ch; font-size: 14px; }
+.maya-how summary { cursor: pointer; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; font-size: 13.5px; }
+.maya-how p { margin-top: 8px; color: var(--muted); }
+.maya-src { font-size: 13.5px; color: var(--muted); max-width: 80ch; }
+.maya-src cite, footer cite { font-style: italic; }
+@media (max-width: 640px) {
+  .maya-card { flex-direction: column; gap: 14px; padding: 14px 16px; }
+  .maya-glyph { width: 84px; height: 84px; } .maya-glyph svg { width: 60px; height: 60px; }
+  .maya-name { font-size: 30px; }
+  .maya-stats { grid-template-columns: 1fr; }
+}
+
 /* now cards */
 .now { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
 .card { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px 16px; display: grid; gap: 8px; align-content: start; min-width: 0; }
@@ -413,6 +437,14 @@ dialog.profdlg::backdrop { background: rgb(8 9 16 / .55); }
     <div class="aspects" id="aspects"></div>
   </section>
 
+  <section id="mayaSec">
+    <div class="head">
+      <div style="display:grid; gap:6px"><div class="eyebrow">Maya calendar · Tzolk'in</div><h2>Your Maya day</h2></div>
+      <p class="sub">The Maya kept a 260-day sacred count beside the solar year, and K'iche' daykeepers in Guatemala keep it still. Every day has a number and a name. This is the one you were born on.</p>
+    </div>
+    <div class="maya" id="maya"></div>
+  </section>
+
   <footer>
     <div class="policies">
       <div><strong>All sales final</strong><span>The full forecast is delivered instantly, so purchases aren't refundable. Preview the sample chart's full forecast before you buy. If something goes wrong, like a payment that didn't unlock your forecast, email me and I'll fix it.</span></div>
@@ -420,6 +452,7 @@ dialog.profdlg::backdrop { background: rgb(8 9 16 / .55); }
       <div><strong>Privacy</strong><span>The free chart is calculated in your browser. The full forecast is calculated on our server; birth details are used for that calculation and not stored. Payments are handled by Stripe or PayPal, and your unlock is remembered in your browser. Google's ad tag uses cookies to tell us when a visit from a Google ad leads to a purchase; it gets the purchase amount, never your birth details.</span></div>
     </div>
     <span>Tropical zodiac, Placidus houses (Porphyry above 66° latitude), true lunar node. Positions from the Astronomy Engine library.</span>
+    <span>Maya days use the traditional count (correlation constant 584283). Day readings follow Barbara Tedlock, <cite>Time and the Highland Maya</cite>, revised edition (University of New Mexico Press, 1992), with sayings from Chichicastenango from Kenneth Johnson, <cite>Jaguar Wisdom</cite> (Llewellyn, 1997).</span>
     <span>Offered as a tool for reflection and planning. Your choices are always your own.</span>
   </footer>
 </div>
