@@ -108,7 +108,9 @@ section > .head .sub { color: var(--muted); max-width: 62ch; font-size: 14.5px; 
 /* your Maya day */
 .maya { display: grid; gap: 18px; }
 .maya-card { display: flex; gap: 20px; padding: 18px; background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius); }
-.maya-glyph { flex: none; width: 132px; height: 132px; display: grid; place-items: center; background: var(--sunken); border-radius: 8px; color: var(--accent); }
+.maya-glyph { flex: none; width: 196px; display: grid; gap: 8px; justify-items: center; align-content: start; align-self: start; padding: 8px 8px 10px; background: var(--sunken); border-radius: 8px; color: var(--accent); }
+.maya-glyph img { display: block; width: 100%; height: auto; border-radius: 5px; }
+.maya-glyph span { display: grid; } .maya-glyph svg { width: 44px; height: 44px; }
 .maya-body { flex: 1; min-width: 0; display: grid; gap: 8px; align-content: start; }
 .maya-ttl { display: flex; align-items: baseline; justify-content: space-between; gap: 6px 12px; flex-wrap: wrap; }
 .maya-name { font-family: var(--display); font-size: 34px; line-height: 1.1; letter-spacing: .01em; }
@@ -124,10 +126,22 @@ section > .head .sub { color: var(--muted); max-width: 62ch; font-size: 14.5px; 
 .maya-src cite, footer cite { font-style: italic; }
 @media (max-width: 640px) {
   .maya-card { flex-direction: column; gap: 14px; padding: 14px 16px; }
-  .maya-glyph { width: 84px; height: 84px; } .maya-glyph svg { width: 60px; height: 60px; }
+  .maya-glyph { width: 100%; max-width: 232px; }
   .maya-name { font-size: 30px; }
   .maya-stats { grid-template-columns: 1fr; }
 }
+
+/* Maya days ahead (paid forecast) */
+.maya-days { display: grid; grid-template-columns: repeat(9, minmax(0, 1fr)); gap: 8px; }
+.maya-day { display: grid; gap: 3px; align-content: start; padding: 10px 8px; background: var(--surface); border: 1px solid var(--line); border-radius: 8px; min-width: 0; }
+.maya-day .d { font-family: var(--mono); font-size: 11px; color: var(--muted); }
+.maya-day .n { font-family: var(--display); font-size: 17px; line-height: 1.25; overflow-wrap: anywhere; }
+.maya-day .t { font-size: 12px; color: var(--muted); line-height: 1.35; }
+.maya-day .tag { font-size: 11px; font-weight: 600; margin-top: 2px; }
+.maya-day.today { background: var(--accent-soft); border-color: var(--accent); } .maya-day.today .d, .maya-day.mine .tag { color: var(--accent); }
+.maya-day.mine { border-color: var(--accent); }
+.maya-day.new { background: var(--blend-soft); border-color: var(--blend); } .maya-day.new .tag { color: var(--blend); }
+@media (max-width: 760px) { .maya-days { grid-template-columns: repeat(3, minmax(0, 1fr)); } }
 
 /* now cards */
 .now { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
@@ -418,6 +432,10 @@ dialog.profdlg::backdrop { background: rgb(8 9 16 / .55); }
       </div>
     </div>
     <div class="chapters" id="chapters"></div>
+    <div class="row" style="margin-top:28px"><h3>Maya days ahead</h3></div>
+    <p class="sub" style="color:var(--muted); font-size:14.5px; margin:6px 0 12px; max-width:70ch">Each day in the 260-day count has its own number and name. Read them beside your sky weather to pick the right day for the right task.</p>
+    <div class="maya-days" id="mayaDays"></div>
+    <div class="chapters" id="mayaNotes"></div>
     </div>
   </section>
 

@@ -364,7 +364,7 @@
         if (mine !== seq) return;
         if (r.ok) {
           state.nowNotes = r.data.now || null; renderNow();
-          hydrate(r.data); showPaid(true); renderPaidNote(); renderTimeline(); renderChapters(); return;
+          hydrate(r.data); showPaid(true); renderPaidNote(); renderTimeline(); renderChapters(); renderMayaAhead(); return;
         }
         if (r.status === 403 && !inp.sample) setToken(key, null);
       } catch (e) { if (mine !== seq) return; }
@@ -609,8 +609,35 @@
     $("#aspects").innerHTML = a.map(x => `<div class="asp"><div class="pair"><span>${P[x.a].glyph}</span><span style="color:var(--${x.tone})">${x.glyph}</span><span>${P[x.b].glyph}</span><span class="pill ${x.tone}" style="font-family:var(--body)">${x.key}</span></div>
       <div><strong>${P[x.a].name} ${x.key} ${P[x.b].name}</strong> <span class="mono" style="color:var(--muted); font-size:12.5px">orb ${x.orb.toFixed(1)}°</span><br>${esc(L.natalAspect(x))}</div></div>`).join("");
   }
+  // ---------- Maya days ahead (part of the paid forecast) ----------
+  function renderMayaAhead() {
+    const [y, m, d] = state.input.date.split("-").map(Number), birth = MAYA.day(y, m, d);
+    const t = state.now, at = n => new Date(t.getFullYear(), t.getMonth(), t.getDate() + n);
+    const dayOf = dt => MAYA.day(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
+    const label = md => `${md.number} ${MAYA.SIGNS[md.sign - 1].name}`;
+    $("#mayaDays").innerHTML = [...Array(9)].map((_, i) => {
+      const dt = at(i), md = dayOf(dt), s = MAYA.SIGNS[md.sign - 1], mine = md.sign === birth.sign;
+      const tag = mine && md.number === birth.number ? "Your Maya birthday" : mine ? "Your day sign" : md.number === 1 ? "New 13-day week" : "";
+      return `<div class="maya-day ${i === 0 ? "today" : mine ? "mine" : md.number === 1 ? "new" : ""}"><span class="d">${i === 0 ? "Today" : fmt(dt)}</span>
+        <span class="n">${esc(label(md))}</span><span class="t">${esc(s.themes)}</span>${tag ? `<span class="tag">${tag}</span>` : ""}</div>`;
+    }).join("");
+    const today = dayOf(t), until = MAYA.daysUntil(t.getFullYear(), t.getMonth() + 1, t.getDate(), birth.number, birth.sign);
+    const wk = 14 - today.number, wkDay = dayOf(at(wk)), wkSign = MAYA.SIGNS[wkDay.sign - 1];
+    const mineDay = dayOf(at(until.sign)), sign = MAYA.SIGNS[birth.sign - 1], num = MAYA.NUMBERS[mineDay.number - 1];
+    const note = (when, title, pill, tone, lines) => `<div class="chapter"><div class="when">${when}</div><div class="body">
+      <h3>${esc(title)} <span class="pill ${tone}">${pill}</span></h3>${lines.map(l => `<p>${l}</p>`).join("")}</div></div>`;
+    $("#mayaNotes").innerHTML =
+      note(`${fmt(at(wk))} → ${fmt(at(wk + 12))}`, "A new 13-day week begins", "New cycle", "blend",
+        [`The count returns to 1 on ${esc(wkSign.name)} (${esc(wkSign.themes.toLowerCase())}). Low numbers are the gentle ones, so the week opens quietly and gathers strength as the numbers climb.`]) +
+      (until.sign === until.day ? "" : note(fmtY(at(until.sign)), `${label(mineDay)}: your day sign returns`, "Your sign", "accent",
+        [`Your day sign comes round every 20 days. This time it carries the number ${mineDay.number}, which is ${num.strength}.`, `<strong>Keep an eye out for:</strong> ${esc(sign.watch)}`])) +
+      note(fmtY(at(until.day)), `Your ${label(birth)} returns`, "Maya birthday", "accent",
+        [`Your Maya birthday comes round every 260 days, and the next is ${until.day} day${until.day === 1 ? "" : "s"} away. Use it to look at what ended and what began since the last one.`]);
+  }
+
   // ---------- your Maya day ----------
   // The Maya day of the birth date (the calendar date at the birthplace). Needs no birth time or place.
+  const MAYA_ART = ["imix", "ik", "akbal", "kan", "chikchan", "kimi", "manik", "lamat", "muluk", "ok", "chuwen", "eb", "ben", "ix", "men", "kib", "kaban", "etznab", "kawak", "ajaw"];   // static/maya-<name>.jpg, in sign order
   function mayaNumeral(n) {
     // Maya numerals: a dot is one, a bar is five; dots sit above the bars
     const dots = n % 5, bars = Math.floor(n / 5), rows = (dots ? 1 : 0) + bars;
@@ -629,7 +656,8 @@
     const big = (k, v, sub) => `<div class="big"><span class="k">${k}</span><span class="v">${esc(v)}</span><span class="s">${sub}</span></div>`;
     $("#maya").innerHTML =
       `<div class="maya-card">
-        <div class="maya-glyph" role="img" aria-label="The number ${day.number} in Maya bar-and-dot numerals">${mayaNumeral(day.number)}</div>
+        <div class="maya-glyph"><img src="/maya-${MAYA_ART[day.sign - 1]}.jpg" alt="Illustration for the day ${esc(sign.name)}" width="464" height="464">
+          <span role="img" aria-label="The number ${day.number} in Maya bar-and-dot numerals">${mayaNumeral(day.number)}</span></div>
         <div class="maya-body">
           <div class="maya-ttl"><span class="maya-name">${day.number} ${esc(sign.name)}</span><span class="mono">Day ${day.kin} of 260 · K'iche' name ${esc(sign.kiche)}</span></div>
           <div class="chips"><span class="pill accent">${esc(sign.themes)}</span><span class="pill">Number ${day.number} of 13 · ${num.strength}</span></div>
@@ -649,7 +677,7 @@
           <p>Each day the number moves up one, from 1 to 13, and the sign moves on one, through 20 signs. The same pairing returns every 260 days, so your Maya birthday comes round more often than your calendar one. The trecena is the 13-day week that began on number 1 before you were born. The Haab' is the solar year: 18 months of 20 days plus 5 closing days. The Long Count numbers the days from a starting point in 3114 BCE.</p>
         </details>
       </div>
-      <p class="maya-src">Source: the day readings follow the teaching of K'iche' daykeepers in Momostenango, Guatemala, as recorded by Barbara Tedlock in <cite>Time and the Highland Maya</cite> (revised edition, University of New Mexico Press, 1992). Sayings from Chichicastenango are as given in Kenneth Johnson, <cite>Jaguar Wisdom</cite> (Llewellyn, 1997). Daykeepers read a day through its rituals, not by translating its name. No day is simply good or bad: each names its difficulty so that it can be met, and each has its own rites for setting things right. The "you tend to" wording is this site's own. Offered as a tool for reflection and planning.</p>`;
+      <p class="maya-src">Source: the day readings follow the teaching of K'iche' daykeepers in Momostenango, Guatemala, as recorded by Barbara Tedlock in <cite>Time and the Highland Maya</cite> (revised edition, University of New Mexico Press, 1992). Sayings from Chichicastenango are as given in Kenneth Johnson, <cite>Jaguar Wisdom</cite> (Llewellyn, 1997). Daykeepers read a day through its rituals, not by translating its name. The picture illustrates the traditional Yucatec day name. No day is simply good or bad: each names its difficulty so that it can be met, and each has its own rites for setting things right. The "you tend to" wording is this site's own. Offered as a tool for reflection and planning.</p>`;
   }
 
   $("#gloss").innerHTML = L.GLOSSARY.map(([t, d]) => `<div><dt>${t}</dt><dd>${esc(d)}</dd></div>`).join("");
