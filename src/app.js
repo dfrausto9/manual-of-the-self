@@ -656,7 +656,7 @@
     const big = (k, v, sub) => `<div class="big"><span class="k">${k}</span><span class="v">${esc(v)}</span><span class="s">${sub}</span></div>`;
     $("#maya").innerHTML =
       `<div class="maya-card">
-        <div class="maya-glyph"><img src="/maya-${MAYA_ART[day.sign - 1]}.jpg" alt="Illustration for the day ${esc(sign.name)}" width="232" height="128">
+        <div class="maya-glyph"><img src="/maya-${MAYA_ART[day.sign - 1]}.jpg" alt="Illustration for the day ${esc(sign.name)}" width="464" height="464">
           <span role="img" aria-label="The number ${day.number} in Maya bar-and-dot numerals">${mayaNumeral(day.number)}</span></div>
         <div class="maya-body">
           <div class="maya-ttl"><span class="maya-name">${day.number} ${esc(sign.name)}</span><span class="mono">Day ${day.kin} of 260 · K'iche' name ${esc(sign.kiche)}</span></div>
