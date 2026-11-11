@@ -364,7 +364,7 @@
         if (mine !== seq) return;
         if (r.ok) {
           state.nowNotes = r.data.now || null; renderNow();
-          hydrate(r.data); showPaid(true); renderPaidNote(); renderTimeline(); renderChapters(); return;
+          hydrate(r.data); showPaid(true); renderPaidNote(); renderTimeline(); renderChapters(); renderMayaAhead(); return;
         }
         if (r.status === 403 && !inp.sample) setToken(key, null);
       } catch (e) { if (mine !== seq) return; }
@@ -609,6 +609,32 @@
     $("#aspects").innerHTML = a.map(x => `<div class="asp"><div class="pair"><span>${P[x.a].glyph}</span><span style="color:var(--${x.tone})">${x.glyph}</span><span>${P[x.b].glyph}</span><span class="pill ${x.tone}" style="font-family:var(--body)">${x.key}</span></div>
       <div><strong>${P[x.a].name} ${x.key} ${P[x.b].name}</strong> <span class="mono" style="color:var(--muted); font-size:12.5px">orb ${x.orb.toFixed(1)}°</span><br>${esc(L.natalAspect(x))}</div></div>`).join("");
   }
+  // ---------- Maya days ahead (part of the paid forecast) ----------
+  function renderMayaAhead() {
+    const [y, m, d] = state.input.date.split("-").map(Number), birth = MAYA.day(y, m, d);
+    const t = state.now, at = n => new Date(t.getFullYear(), t.getMonth(), t.getDate() + n);
+    const dayOf = dt => MAYA.day(dt.getFullYear(), dt.getMonth() + 1, dt.getDate());
+    const label = md => `${md.number} ${MAYA.SIGNS[md.sign - 1].name}`;
+    $("#mayaDays").innerHTML = [...Array(9)].map((_, i) => {
+      const dt = at(i), md = dayOf(dt), s = MAYA.SIGNS[md.sign - 1], mine = md.sign === birth.sign;
+      const tag = mine && md.number === birth.number ? "Your Maya birthday" : mine ? "Your day sign" : md.number === 1 ? "New 13-day week" : "";
+      return `<div class="maya-day ${i === 0 ? "today" : mine ? "mine" : md.number === 1 ? "new" : ""}"><span class="d">${i === 0 ? "Today" : fmt(dt)}</span>
+        <span class="n">${esc(label(md))}</span><span class="t">${esc(s.themes)}</span>${tag ? `<span class="tag">${tag}</span>` : ""}</div>`;
+    }).join("");
+    const today = dayOf(t), until = MAYA.daysUntil(t.getFullYear(), t.getMonth() + 1, t.getDate(), birth.number, birth.sign);
+    const wk = 14 - today.number, wkDay = dayOf(at(wk)), wkSign = MAYA.SIGNS[wkDay.sign - 1];
+    const mineDay = dayOf(at(until.sign)), sign = MAYA.SIGNS[birth.sign - 1], num = MAYA.NUMBERS[mineDay.number - 1];
+    const note = (when, title, pill, tone, lines) => `<div class="chapter"><div class="when">${when}</div><div class="body">
+      <h3>${esc(title)} <span class="pill ${tone}">${pill}</span></h3>${lines.map(l => `<p>${l}</p>`).join("")}</div></div>`;
+    $("#mayaNotes").innerHTML =
+      note(`${fmt(at(wk))} → ${fmt(at(wk + 12))}`, "A new 13-day week begins", "New cycle", "blend",
+        [`The count returns to 1 on ${esc(wkSign.name)} (${esc(wkSign.themes.toLowerCase())}). Low numbers are the gentle ones, so the week opens quietly and gathers strength as the numbers climb.`]) +
+      (until.sign === until.day ? "" : note(fmtY(at(until.sign)), `${label(mineDay)}: your day sign returns`, "Your sign", "accent",
+        [`Your day sign comes round every 20 days. This time it carries the number ${mineDay.number}, which is ${num.strength}.`, `<strong>Keep an eye out for:</strong> ${esc(sign.watch)}`])) +
+      note(fmtY(at(until.day)), `Your ${label(birth)} returns`, "Maya birthday", "accent",
+        [`Your Maya birthday comes round every 260 days, and the next is ${until.day} day${until.day === 1 ? "" : "s"} away. Use it to look at what ended and what began since the last one.`]);
+  }
+
   // ---------- your Maya day ----------
   // The Maya day of the birth date (the calendar date at the birthplace). Needs no birth time or place.
   function mayaNumeral(n) {
